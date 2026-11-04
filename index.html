@@ -1,0 +1,919 @@
+<meta charset="utf-8">
+<title>Payroll Template Builder</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one working column of numbered steps, a sticky summary rail on wide screens.
+   Palette: asphalt greys with road-marking yellow as the single accent. */
+:root{
+  --bg:#f3f4f2; --surface:#ffffff; --sunk:#eceeeb; --line:#d8dbd6; --fg:#1d2124; --muted:#5f666b;
+  --asphalt:#262b2f; --on-asphalt:#f4f4f1; --mark:#f2b705; --mark-ink:#5a4300; --mark-soft:#fff3c9;
+  --ok:#1f7a4d; --ok-soft:#e2f3e9; --warn:#a15c00; --warn-soft:#fdf0dc; --bad:#b3261e; --bad-soft:#fbe5e3;
+  --f-body:"IBM Plex Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#15181a; --surface:#1d2124; --sunk:#181b1d; --line:#30363a; --fg:#e8eae6; --muted:#9aa2a6;
+  --asphalt:#0e1012; --on-asphalt:#eceee9; --mark:#f5c026; --mark-ink:#f5c026; --mark-soft:#3a3115;
+  --ok:#5cc58f; --ok-soft:#173326; --warn:#f0a94a; --warn-soft:#3a2a12; --bad:#f08a80; --bad-soft:#3d1c19; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#15181a; --surface:#1d2124; --sunk:#181b1d; --line:#30363a; --fg:#e8eae6; --muted:#9aa2a6;
+  --asphalt:#0e1012; --on-asphalt:#eceee9; --mark:#f5c026; --mark-ink:#f5c026; --mark-soft:#3a3115;
+  --ok:#5cc58f; --ok-soft:#173326; --warn:#f0a94a; --warn-soft:#3a2a12; --bad:#f08a80; --bad-soft:#3d1c19; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.6}
+*{box-sizing:border-box}
+.band{background:var(--asphalt);color:var(--on-asphalt);position:relative}
+.band::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:repeating-linear-gradient(90deg,var(--mark) 0 36px,transparent 36px 60px)}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.band .wrap{padding-block:28px 32px;display:flex;flex-wrap:wrap;gap:12px 32px;align-items:flex-end;justify-content:space-between}
+.band small{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.7}
+.band h1{margin:2px 0 0;font-size:clamp(22px,3.2vw,30px);font-weight:700;line-height:1.25;text-wrap:balance}
+.band p{margin:6px 0 0;opacity:.8;max-width:62ch}
+.period{font-family:var(--f-mono);font-size:13px;border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:6px 14px;white-space:nowrap}
+main.wrap{padding-block:28px 56px;display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:24px;align-items:start}
+@media (max-width:900px){main.wrap{grid-template-columns:minmax(0,1fr)}}
+.steps{display:grid;gap:18px;min-width:0}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;min-width:0}
+.step-h{display:flex;gap:14px;align-items:flex-start}
+.stepno{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:14px;background:var(--sunk);color:var(--muted);border:1px solid var(--line)}
+.step.done .stepno{background:var(--mark);color:#1d2124;border-color:var(--mark)}
+.step h2{margin:0;font-size:18px;font-weight:600;line-height:1.35}
+.step .sub{margin:2px 0 0;color:var(--muted);font-size:14px;max-width:70ch}
+.body{margin-top:16px;padding-left:44px;display:grid;gap:14px;min-width:0}
+@media (max-width:560px){.body{padding-left:0}}
+.drop{border:1.5px dashed var(--line);border-radius:var(--r);padding:18px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:var(--sunk);cursor:pointer;transition:border-color .15s,background .15s}
+.drop:hover,.drop.over{border-color:var(--mark);background:var(--mark-soft)}
+.drop:focus-within{outline:2px solid var(--mark);outline-offset:2px}
+.drop input{position:absolute;opacity:0;width:1px;height:1px}
+.drop .t{font-weight:600}.drop .d{color:var(--muted);font-size:13px}
+.fname{font-family:var(--f-mono);font-size:13px;word-break:break-all}
+.btn{font:inherit;font-weight:600;border-radius:8px;padding:9px 16px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+.btn:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--mark);outline-offset:2px}
+.btn.primary{background:var(--mark);border-color:var(--mark);color:#1d2124}
+.btn.primary:hover{filter:brightness(1.05)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12.5px;padding:3px 10px;border-radius:999px;background:var(--sunk);border:1px solid var(--line);white-space:nowrap}
+.chip.hid{color:var(--muted);border-style:dashed}
+.chip.key{background:var(--mark-soft);border-color:var(--mark);color:var(--mark-ink)}
+.row{display:flex;flex-wrap:wrap;gap:14px}
+.field{display:grid;gap:4px;min-width:140px}
+.field label{font-size:12.5px;color:var(--muted);letter-spacing:.02em}
+select,input[type=date],input[type=number]{font:inherit;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg);min-width:0}
+.hint{font-size:13px;color:var(--muted)}
+.how{margin:0;padding-left:20px;font-size:14px;display:grid;gap:2px}
+.how b{font-weight:600}
+.note{font-size:13.5px;padding:10px 12px;border-radius:8px;background:var(--sunk);border:1px solid var(--line)}
+.note.warn{background:var(--warn-soft);border-color:transparent;color:var(--fg)}
+.note.bad{background:var(--bad-soft);border-color:transparent}
+.note.ok{background:var(--ok-soft);border-color:transparent}
+details.map{border:1px solid var(--line);border-radius:8px;min-width:0}
+details.map summary{cursor:pointer;padding:10px 14px;font-weight:600;font-size:14px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+details.map summary span{font-weight:400;color:var(--muted)}
+.tbl{overflow-x:auto;border-top:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:7px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:12px;color:var(--muted);font-weight:500;background:var(--sunk)}
+td.col{font-family:var(--f-mono);color:var(--muted);width:44px}
+td.num,th.num{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+td select{width:100%;min-width:180px;padding:5px 8px;font-size:13px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:var(--line)}
+.dot.on{background:var(--ok)}
+aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:grid;gap:14px;min-width:0}
+@media (max-width:900px){aside{position:static}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:grid;gap:12px}
+.panel h3{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.kv{display:grid;grid-template-columns:1fr auto;gap:6px 12px;font-size:14px}
+.kv dt{color:var(--muted)}.kv dd{margin:0;text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.pill{font-size:12px;padding:2px 9px;border-radius:999px;font-weight:600;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}.pill.wait{background:var(--sunk);color:var(--muted)}.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.checks{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:14px}
+.checks li{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.log{margin:0;padding:0;list-style:none;font-size:13px;display:grid;gap:4px}
+.log li{padding-left:16px;position:relative}.log li::before{content:"";position:absolute;left:2px;top:.6em;width:7px;height:7px;border-radius:2px;background:var(--mark)}
+.people{font-size:13px;max-height:160px;overflow:auto;margin:0;padding-left:18px}
+.saved{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;font-size:13.5px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--sunk)}
+.btn.small{padding:5px 12px;font-size:13px;font-weight:500}
+.big{width:100%;padding:13px 16px;font-size:16px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="band">
+  <div class="wrap">
+    <div>
+      <small>Payroll Outsourcing · <span id="coBand">บริษัท เอเชี่ยน แอสฟัลท์ จำกัด</span></small>
+      <h1>สร้างไฟล์ Template กรอกข้อมูลเงินเดือน</h1>
+      <p>เลือกบริษัทลูกค้า เปลี่ยนเดือนทุกชีต ใส่รายได้–รายหัก (และชั่วโมง OT ถ้ามี) จากรายงานเงินเดือน empeo แล้วดาวน์โหลดไฟล์ส่งลูกค้าก่อนรอบคำนวณ</p>
+    </div>
+    <div class="period" id="periodBadge">งวด —</div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="steps">
+    <section class="step" id="s1">
+      <div class="step-h"><div class="stepno">1</div><div>
+        <h2>บริษัทลูกค้าและไฟล์ต้นแบบ</h2>
+        <p class="sub">ใช้ไฟล์ Template ของเดือนก่อน (เช่น <span class="fname" id="exampleName">Asian Asphalt_Template กรอกข้อมูล 10.2026.xlsx</span>) ทุกชีต สูตร และรูปแบบจะถูกคงไว้ตามเดิม</p>
+      </div></div>
+      <div class="body">
+        <div class="row">
+          <div class="field" style="flex:1;min-width:220px"><label for="selCo">บริษัทลูกค้า</label><select id="selCo"></select></div>
+        </div>
+        <div class="note warn" id="coWarn" hidden></div>
+        <label class="drop" id="dropTpl"><input type="file" id="fileTpl" accept=".xlsx">
+          <div><div class="t">เลือกหรือลากไฟล์ .xlsx มาวาง</div><div class="d" id="tplName">ยังไม่ได้เลือกไฟล์</div></div>
+        </label>
+        <div id="tplInfo" hidden>
+          <div class="chips" id="sheetChips"></div>
+          <p class="hint" id="tplMeta"></p>
+        </div>
+        <div class="note bad" id="tplErr" hidden></div>
+        <div class="saved" id="savedBox" hidden>
+          <div><span class="pill ok">จำไว้แล้ว</span> <span id="savedText"></span></div>
+          <button class="btn small" id="btnForget" type="button">ลืมไฟล์นี้</button>
+        </div>
+        <label class="hint" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="chkKeepOut"> หลังสร้างไฟล์ ให้จำไฟล์ที่สร้างเป็นต้นแบบของเดือนถัดไป</label>
+      </div>
+    </section>
+
+    <section class="step" id="s2">
+      <div class="step-h"><div class="stepno">2</div><div>
+        <h2>งวดเงินเดือน</h2>
+        <p class="sub">ตั้งเป็นเดือนปัจจุบันให้อัตโนมัติ เดือนนี้จะไปแทนที่หัวกระดาษของชีต New Employee, Resign, ChangeInfo, PVF และ Income - Deduct</p>
+      </div></div>
+      <div class="body">
+        <div class="row">
+          <div class="field"><label for="selMonth">เดือน</label><select id="selMonth"></select></div>
+          <div class="field"><label for="inpYear">ปี (ค.ศ.)</label><input type="number" id="inpYear" min="2024" max="2035" step="1"></div>
+          <div class="field"><label for="inpPay">วันจ่ายเงินเดือน</label><input type="date" id="inpPay"></div>
+        </div>
+        <p class="hint" id="payHint">วันจ่ายดึงจากชีต “รอบ” ของไฟล์ต้นแบบ แก้ได้ถ้าเลื่อนวันจ่าย ระบบจะใส่ในคอลัมน์ “วันจ่ายเงิน” เป็น พ.ศ. ตามรูปแบบเดิม</p>
+      </div>
+    </section>
+
+    <section class="step" id="s3">
+      <div class="step-h"><div class="stepno">3</div><div>
+        <h2>รายงานเงินเดือนจาก empeo</h2>
+        <p class="sub" id="s3sub">ใช้เติมชีต Income - Deduct และ สรุป ชม OT ที่พนักงานขอ</p>
+      </div></div>
+      <div class="body">
+        <ol class="how">
+          <li>เข้า empeo ของลูกค้าผ่าน Partner Portal → Customer → ⋮ → <b>Remote Support › Payroll</b> แล้วไปที่ <b>เงินเดือน</b> → เลือกงวดของเดือนนี้ แล้วกด <b>คำนวณเงินเดือน</b></li>
+          <li>ในหน้างวดเดียวกัน กด <b>ไฟล์เอกสาร → รายงาน → รายงานเงินเดือน → ทั้งหมด</b></li>
+          <li>นำไฟล์ที่ได้ (เช่น <span class="fname">Payroll_Report_Period_11_02112026.xlsx</span>) มาวางด้านล่าง ระบบจับคู่คอลัมน์และรหัสพนักงานให้เอง</li>
+        </ol>
+        <label class="drop" id="dropRep"><input type="file" id="fileRep" accept=".xlsx,.xls,.csv">
+          <div><div class="t">เลือกไฟล์รายงานสรุปงวดเงินเดือน</div><div class="d" id="repName">ไม่บังคับ ถ้าไม่ใส่ ยอดในชีต Income - Deduct (และ OT) จะเป็น 0 ทั้งหมด</div></div>
+        </label>
+        <div class="note bad" id="repErr" hidden></div>
+        <div id="mapWrap" hidden>
+          <div class="grid" style="display:grid;gap:12px">
+            <details class="map" id="mapId"><summary>Income - Deduct <span id="mapIdCount"></span></summary><div class="tbl"><table><thead><tr><th>คอลัมน์</th><th>ใน Template</th><th>มาจากคอลัมน์ในรายงาน</th><th class="num">ยอดรวม</th></tr></thead><tbody id="mapIdBody"></tbody></table></div></details>
+            <details class="map" id="mapOt"><summary>สรุป ชม OT ที่พนักงานขอ <span id="mapOtCount"></span></summary><div class="tbl"><table><thead><tr><th>คอลัมน์</th><th>ใน Template</th><th>มาจากคอลัมน์ในรายงาน</th><th class="num">รวม ชม.</th></tr></thead><tbody id="mapOtBody"></tbody></table></div></details>
+          </div>
+          <label class="hint" id="dropWrap" style="display:flex;gap:8px;align-items:center;margin-top:10px"><input type="checkbox" id="chkDrop" checked> ลบคอลัมน์ที่ไม่มีหัวคอลัมน์ในชีต Income - Deduct (เช่น AE)</label>
+          <label class="hint" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="chkInfo"> ใช้ข้อมูลทั่วไป (ฝ่าย ตำแหน่ง บัญชี ฯลฯ) จากรายงาน empeo แทนข้อมูลเดิมในไฟล์ต้นแบบ</label>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <h3>พร้อมสร้างไฟล์</h3>
+      <ul class="checks">
+        <li>ไฟล์ต้นแบบ <span class="pill wait" id="ckTpl">รอไฟล์</span></li>
+        <li>งวดเงินเดือน <span class="pill ok" id="ckPeriod">—</span></li>
+        <li>รายงาน empeo <span class="pill wait" id="ckRep">ไม่ได้ใส่</span></li>
+      </ul>
+      <dl class="kv" id="kv">
+        <dt>พนักงานในไฟล์ต้นแบบ</dt><dd id="kvTpl">—</dd>
+        <dt>พนักงานในรายงาน</dt><dd id="kvRep">—</dd>
+        <dt>ตรงกัน</dt><dd id="kvMatch">—</dd>
+        <dt>คนใหม่ในงวดนี้</dt><dd id="kvNew">—</dd>
+        <dt>ไม่อยู่ในงวดนี้</dt><dd id="kvGone">—</dd>
+      </dl>
+      <button class="btn primary big" id="btnGo" disabled>สร้าง Template</button>
+      <div class="note" id="dlNote" hidden></div>
+    </div>
+    <div class="panel" id="resultPanel" hidden>
+      <h3>สิ่งที่เปลี่ยนในไฟล์</h3>
+      <ul class="log" id="log"></ul>
+      <div id="peopleWrap" hidden>
+        <p class="hint" style="margin:0">คนใหม่ (เพิ่มท้ายตาราง)</p><ul class="people" id="newList"></ul>
+        <p class="hint" style="margin:6px 0 0">ไม่อยู่ในรายงานงวดนี้ (นำออก)</p><ul class="people" id="goneList"></ul>
+      </div>
+      <button class="btn" id="btnAgain" hidden>ดาวน์โหลดอีกครั้ง</button>
+    </div>
+  </aside>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+/* Payroll Outsourcing template engine (multi-company) — edits the xlsx XML directly so every
+   sheet, style, hidden tab, comment and formula in the base file is kept. */
+(function (root) {
+  'use strict';
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const TH_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  const SHEET_ID = 'Income - Deduct';
+  const SHEET_OT = 'สรุป ชม OT ที่พนักงานขอ';
+  const SHEET_SUM = 'สรุปงวดเงินเดือน';
+  const SHEET_ROUND = 'รอบ';
+
+  // Target columns and the empeo payroll-report headers that feed them.
+  const ID_TARGETS = [
+    ['S','รายได้อื่นๆ (ประจำ)',['รายได้อื่นๆ (ประจำ)']],
+    ['T','ค่าเช่าบ้าน',['ค่าเช่าบ้าน']],
+    ['U','ค่ารถประจำตำแหน่ง',['ค่ารถประจำตำแหน่ง']],
+    ['V','ค่าโทรศัพท์',['ค่าโทรศัพท์']],
+    ['W','เงินตกเบิกปรับเงินเดือนย้อนหลัง',['เงินตกเบิกปรับเงินเดือนย้อนหลัง']],
+    ['X','โบนัส',['โบนัส']],
+    ['Y','เงินชดเชย',['เงินชดเชย']],
+    ['Z','คอมมิชชั่น',['คอมมิชชั่น']],
+    ['AA','รายได้อื่นๆ',['รายได้อื่นๆ']],
+    ['AB','ค่ากะ',['ค่ากะ']],
+    ['AC','เงินเดือนตกเบิก',['เงินเดือนตกเบิก']],
+    ['AD','ค่าเบี้ยเลี้ยง',['ค่าเบี้ยเลี้ยง']],
+    ['AF','ค่าเบี้ยเลี้ยงเบิกล่วงหน้า',['ค่าเบี้ยเลี้ยงเบิกล่วงหน้า']],
+    ['AG','โบนัส (เบิกค่าใช้จ่าย)',[],['โบนัส']],
+    ['AH','เงินหัก กยศ.',['เงินกู้ กยศ.','เงินหัก กยศ.','เงินหักกยศ']],
+    ['AI','หักค่าปรับจราจร',['หักค่าปรับจราจร']],
+    ['AJ','กรมบังคับคดี',['กรมบังคับคดี','กรมบังคดี']],
+    ['AK','หักบกพร่อง',['หักบกพร่อง']],
+    ['AL','เงินหักอื่นๆ (ไม่คำนวณภาษี)',['เงินหักอื่นๆ (ไม่คำนวณภาษี)','เงินหักอื่นๆไม่คำนวณภาษี']],
+    ['AM','กองทุนสงเคราะห์ลูกจ้าง',['กองทุนสงเคราะห์ลูกจ้าง']],
+    ['AN','เงินหักอื่นๆ (คำนวณภาษี)',['เงินหักอื่นๆ (คำนวณภาษี)']],
+  ];
+  const OT_TARGETS = [
+    ['S','วันทำงาน (ชม.)',['วันทำงาน (ชม.)']],
+    ['T','ในกะวันหยุด (ชม.)',['ในกะวันหยุด (ชม.)']],
+    ['U','นอกกะวันหยุด (ชม.)',['นอกกะวันหยุด (ชม.)']],
+    ['V','แบบเหมา (ชม.)',['แบบเหมา (ชม.)']],
+    ['W','รวม (ชม.)',['รวม (ชม.)']],
+  ];
+  const YAN_TARGETS = [
+    ['S','ค่าล่วงเวลา',['ค่าล่วงเวลา','รวม (บาท)']],
+    ['T','ค่าทำงานวันหยุด',[]],
+    ['U','ค่าเดินทางและอาหารหลัง 3 ทุ่ม',[]],
+    ['V','ค่าตำแหน่ง',['ค่าตำแหน่ง']],
+    ['W','โบนัส',['โบนัส']],
+    ['X','เงินชดเชย',['เงินชดเชย']],
+    ['Y','ค่า Commission',['ค่า Commission','คอมมิชชั่น']],
+    ['Z','Extra income',['Extra income']],
+    ['AA','ค่าเบี้ยเลี้ยง',['เบี้ยเลี้ยง','ค่าเบี้ยเลี้ยง']],
+    ['AB','เงินหัก กยศ.',['เงินกู้ กยศ.','เงินหัก กยศ.']],
+    ['AC','เงินกู้ กรอ.',['เงินกู้ กรอ.']],
+    ['AD','หักลาไม่รับค่าจ้าง (บาท)',['หักลาไม่รับค่าจ้าง (บาท)']],
+    ['AE','หักค่าปรับ',['ค่าปรับ','หักค่าปรับ']],
+    ['AF','กรมบังคับคดี',['กรมบังคับคดี','กรมบังคดี']],
+    ['AG','เงินหักอื่นๆ (ไม่คำนวณภาษี)',['เงินหักอื่นๆ (ไม่คำนวณภาษี)','เงินหักอื่นๆไม่คำนวณภาษี']],
+    ['AH','เงินหักอื่นๆ (คำนวณภาษี)',['เงินหักอื่นๆ (คำนวณภาษี)']],
+  ];
+  // One entry per customer: where things sit in that customer's template.
+  const COMPANIES = [
+    { key: 'aa', name: 'บริษัท เอเชี่ยน แอสฟัลท์ จำกัด', code: 'C2000179', match: /เอเชี่ยน\s*แอสฟัลท์|asian\s*asphalt/i,
+      filePrefix: 'Asian Asphalt_Template กรอกข้อมูล', idHeaderRow: 7, idFirstRow: 8, idTargets: ID_TARGETS, dropBlank: true,
+      ot: { sheet: 'สรุป ชม OT ที่พนักงานขอ', firstRow: 4, targets: OT_TARGETS, autoFilter: ['A','AH'] }, sumHeaderRow: 2, sumFirstRow: 3 },
+    { key: 'yan', name: 'บริษัท ย่านสถาปนิก จำกัด', code: '', match: /ย่าน\s*สถาปนิก/,
+      filePrefix: 'ย่านสถาปนิก_Template กรอกข้อมูล', idHeaderRow: 6, idFirstRow: 7, idTargets: YAN_TARGETS, dropBlank: false,
+      ot: null, sumHeaderRow: 3, sumFirstRow: 4 },
+  ];
+  const INFO_COLS = 'A B C D E F G H I J K L M N O P Q R'.split(' ');
+
+  const norm = s => String(s == null ? '' : s).replace(/\s+/g,'').replace(/\*/g,'')
+    .replace(/ตกบิก/g,'ตกเบิก').replace(/คำนวน/g,'คำนวณ').toLowerCase();
+  const colNum = c => c.split('').reduce((n,ch)=>n*26+ch.charCodeAt(0)-64,0);
+  const colName = n => { let s=''; while(n>0){const m=(n-1)%26; s=String.fromCharCode(65+m)+s; n=Math.floor((n-1)/26);} return s; };
+  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const serial = (y,m,d) => (Date.UTC(y,m-1,d) - Date.UTC(1899,11,30)) / 86400000;
+  const fromSerial = s => { const dt = new Date(Date.UTC(1899,11,30) + Math.round(s)*86400000); return {y:dt.getUTCFullYear(), m:dt.getUTCMonth()+1, d:dt.getUTCDate()}; };
+  const daysIn = (y,m) => new Date(Date.UTC(y,m,0)).getUTCDate();
+  const toNum = v => { if (typeof v === 'number') return v; const n = Number(String(v||'').replace(/,/g,'').trim()); return isFinite(n) ? n : 0; };
+  const codeKey = v => String(v == null ? '' : v).replace(/[\u0E00-\u0E7F\s]/g, '').trim(); // empeo codes sometimes carry a stray Thai mark
+  const codeVal = v => { const s = codeKey(v); return /^[1-9]\d{0,14}$/.test(s) ? Number(s) : s; };
+
+  function cellXml(ref, s, val, extra) {
+    const sa = s != null ? ` s="${s}"` : '';
+    if (val === null || val === undefined || val === '') return `<c r="${ref}"${sa}/>`;
+    if (typeof val === 'number') return `<c r="${ref}"${sa}><v>${val}</v></c>`;
+    return `<c r="${ref}"${sa} t="inlineStr"><is><t xml:space="preserve">${esc(val)}</t></is></c>`;
+  }
+  const attr = (tag, name) => { const m = tag.match(new RegExp(`\\s${name}="([^"]*)"`)); return m ? m[1] : null; };
+  const cellRe = ref => new RegExp(`<c r="${ref}"(?=[\\s>/])[^>]*?(?:/>|>[\\s\\S]*?</c>)`);
+
+  function setCell(xml, ref, val) {
+    const re = cellRe(ref); const m = xml.match(re);
+    if (!m) return xml; // header cells always exist in this template
+    const s = attr(m[0].slice(0, m[0].indexOf('>')+1), 's');
+    return xml.replace(re, cellXml(ref, s, val));
+  }
+
+  function splitSheet(xml) {
+    const a = xml.indexOf('<sheetData'); const aEnd = xml.indexOf('>', a) + 1;
+    const selfClosing = xml[aEnd-2] === '/';
+    const b = selfClosing ? aEnd : xml.indexOf('</sheetData>');
+    const body = selfClosing ? '' : xml.slice(aEnd, b);
+    const rows = [];
+    body.replace(/<row [^>]*?(?:\/>|>[\s\S]*?<\/row>)/g, r => { rows.push({ n: +attr(r,'r'), xml: r }); return r; });
+    return { head: xml.slice(0, aEnd).replace(/<sheetData\/>$/, '<sheetData>'), rows, tail: selfClosing ? '</sheetData>' + xml.slice(aEnd) : xml.slice(b) };
+  }
+  function cellsOf(rowXml) {
+    const out = [];
+    rowXml.replace(/<c r="([A-Z]+)(\d+)"[^>]*?(?:\/>|>[\s\S]*?<\/c>)/g, (x, col) => { out.push({ col, xml: x }); return x; });
+    return out;
+  }
+  function shiftRefs(text, fromRow, toRow) {
+    return text.replace(/(^|[^A-Za-z_\d])(\$?[A-Z]{1,3})(\d+)(?![\d(])/g, (m, pre, c, r) => pre + c + (+r === fromRow ? toRow : r));
+  }
+  function rowOpen(protoXml, n) {
+    const open = protoXml.match(/^<row [^>]*?>/)[0].replace(/\/>$/,'>');
+    return open.replace(/\sr="\d+"/, ` r="${n}"`).replace(/\sspans="[^"]*"/, '');
+  }
+  // Clone a prototype row to row n, filling values from data {col: value}.
+  function buildRow(proto, protoN, n, data, opts) {
+    opts = opts || {};
+    const cells = new Map();
+    for (const c of cellsOf(proto)) {
+      const ref = c.col + n; const tagEnd = c.xml.indexOf('>') + 1;
+      const tag = c.xml.slice(0, tagEnd); const s = attr(tag, 's');
+      const f = c.xml.match(/<f([^>]*)>([^<]*)<\/f>/) || c.xml.match(/<f([^>]*)\/>/);
+      if (f && !(data && c.col in data)) {
+        let fattrs = f[1] || ''; let text = f[2] || '';
+        if (opts.formula && opts.formula[c.col] !== undefined) text = opts.formula[c.col];
+        else text = shiftRefs(text, protoN, n);
+        if (/t="shared"/.test(fattrs)) fattrs = '';
+        fattrs = fattrs.replace(/ref="[^"]*"/, `ref="${ref}"`);
+        let ctag = tag.replace(/^<c r="[A-Z]+\d+"/, `<c r="${ref}"`).replace(/\/>$/, '>');
+        if (!text) { cells.set(c.col, `<c r="${ref}"${s!=null?` s="${s}"`:''}/>`); continue; }
+        cells.set(c.col, `${ctag}<f${fattrs}>${esc(text)}</f></c>`);
+      } else if (data && c.col in data) {
+        cells.set(c.col, cellXml(ref, s, data[c.col]));
+      } else if (opts.keepValues) {
+        cells.set(c.col, c.xml.replace(/^<c r="[A-Z]+\d+"/, `<c r="${ref}"`));
+      } else {
+        cells.set(c.col, `<c r="${ref}"${s!=null?` s="${s}"`:''}/>`);
+      }
+    }
+    if (data) for (const col of Object.keys(data)) if (!cells.has(col)) cells.set(col, cellXml(col + n, null, data[col]));
+    const ordered = [...cells.entries()].sort((a,b) => colNum(a[0]) - colNum(b[0])).map(e => e[1]).join('');
+    return rowOpen(proto, n) + ordered + '</row>';
+  }
+
+  /* Replace everything from firstRow down with n data rows, optional blank
+     buffer rows and a totals row whose formulas cover the new range. */
+  function rebuild(xml, cfg) {
+    const sp = splitSheet(xml);
+    const byN = new Map(sp.rows.map(r => [r.n, r.xml]));
+    const proto = byN.get(cfg.firstRow);
+    const kept = sp.rows.filter(r => r.n < cfg.firstRow).map(r => r.xml);
+    const out = []; let n = cfg.firstRow;
+    cfg.rows.forEach(d => out.push(buildRow(proto, cfg.firstRow, n++, d)));
+    const lastData = n - 1;
+    if (cfg.blankProtoRow && byN.get(cfg.blankProtoRow)) for (let i = 0; i < (cfg.gap||0); i++) out.push(buildRow(byN.get(cfg.blankProtoRow), cfg.blankProtoRow, n++, null, { keepValues: true }));
+    const lastRange = n - 1; let totalRow = null;
+    if (cfg.totalsRow && byN.get(cfg.totalsRow)) {
+      const tp = byN.get(cfg.totalsRow); const formula = {};
+      for (const c of cellsOf(tp)) if (/<f[\s>\/]/.test(c.xml)) formula[c.col] = cfg.totalsFormula(c.col, cfg.firstRow, lastRange);
+      totalRow = n;
+      out.push(buildRow(tp, cfg.totalsRow, n++, null, { formula, keepValues: true }));
+    }
+    const maxRow = n - 1;
+    let head = sp.head.replace(/<dimension ref="([A-Z]+)\d+:([A-Z]+)\d+"\/>/, (m, a, b) => `<dimension ref="${a}1:${b}${maxRow}"/>`);
+    let tail = sp.tail;
+    if (cfg.autoFilterCols) tail = tail.replace(/<autoFilter ref="[^"]*"/, `<autoFilter ref="${cfg.autoFilterCols[0]}${cfg.firstRow-1}:${cfg.autoFilterCols[1]}${lastData}"`);
+    return { xml: head + kept.join('') + out.join('') + tail, lastData, totalRow };
+  }
+
+
+  // Delete whole columns from a sheet (cells, widths, merges, formulas, comments).
+  function shiftFormulaCols(text, del) {
+    return text.replace(/(^|[^A-Za-z_\d!$'\]])(\$?)([A-Z]{1,3})(\$?\d+)(?![\d(])/g, (m, pre, d1, c, r) => {
+      const n = colNum(c); const k = del.filter(x => x < n).length; return pre + d1 + colName(n - k) + r;
+    });
+  }
+  function dropColumns(xml, letters) {
+    const del = letters.map(colNum).sort((a, b) => a - b); if (!del.length) return xml;
+    const newCol = n => del.includes(n) ? null : n - del.filter(x => x < n).length;
+    xml = xml.replace(/<c r="([A-Z]+)(\d+)"[^>]*?(?:\/>|>[\s\S]*?<\/c>)/g, (cell, c, r) => {
+      const nc = newCol(colNum(c)); if (nc === null) return '';
+      let out = cell.replace(/^<c r="[A-Z]+\d+"/, `<c r="${colName(nc)}${r}"`);
+      out = out.replace(/(<f[^>]*>)([^<]*)(<\/f>)/, (m, a, t, b) => a.replace(/ref="([A-Z]+)(\d+)(?::([A-Z]+)(\d+))?"/, (mm, c1, r1, c2, r2) => `ref="${colName(newCol(colNum(c1)) || colNum(c1))}${r1}${c2 ? ':' + colName(newCol(colNum(c2)) || colNum(c2) - 1) + r2 : ''}"`) + shiftFormulaCols(t, del) + b);
+      return out;
+    });
+    xml = xml.replace(/<mergeCell ref="([A-Z]+)(\d+):([A-Z]+)(\d+)"\/>/g, (m, c1, r1, c2, r2) => {
+      let a = colNum(c1), b = colNum(c2); const na = newCol(a) ?? (a - del.filter(x => x < a).length); const nb = b - del.filter(x => x <= b).length;
+      return nb < na ? '' : `<mergeCell ref="${colName(na)}${r1}:${colName(nb)}${r2}"/>`;
+    });
+    xml = xml.replace(/<mergeCells count="\d+">([\s\S]*?)<\/mergeCells>/, (m, inner) => { const n = (inner.match(/<mergeCell /g) || []).length; return n ? `<mergeCells count="${n}">${inner}</mergeCells>` : ''; });
+    xml = xml.replace(/<cols>([\s\S]*?)<\/cols>/, (m, inner) => {
+      const out = [];
+      inner.replace(/<col [^>]*\/>/g, tag => {
+        const mn = +attr(tag, 'min'), mx = +attr(tag, 'max');
+        const keep = []; for (let i = mn; i <= Math.min(mx, 16384); i++) if (!del.includes(i)) keep.push(i);
+        if (!keep.length) return tag;
+        const a = keep[0] - del.filter(x => x < keep[0]).length;
+        const b = mx >= 16384 ? 16384 : keep[keep.length - 1] - del.filter(x => x < keep[keep.length - 1]).length;
+        out.push(tag.replace(/\smin="\d+"/, ` min="${a}"`).replace(/\smax="\d+"/, ` max="${b}"`)); return tag;
+      });
+      return `<cols>${out.join('')}</cols>`;
+    });
+    xml = xml.replace(/<dimension ref="([A-Z]+)(\d+):([A-Z]+)(\d+)"\/>/, (m, a, r1, b, r2) => `<dimension ref="${a}${r1}:${colName(colNum(b) - del.filter(x => x <= colNum(b)).length)}${r2}"/>`);
+    return xml;
+  }
+  // Move cell comments of a sheet when columns are deleted.
+  async function shiftComments(zip, sheetPath, letters) {
+    const del = letters.map(colNum); const relPath = sheetPath.replace(/worksheets\/(sheet\d+\.xml)$/, 'worksheets/_rels/$1.rels');
+    if (!zip.file(relPath)) return;
+    const rels = await zip.file(relPath).async('string'); const base = sheetPath.replace(/[^/]+$/, '');
+    const targets = []; rels.replace(/Target="([^"]+)"/g, (m, t) => { targets.push(new URL(t, 'http://x/' + base).pathname.slice(1)); return m; });
+    const fixRef = (c, r) => { const n = colNum(c); return colName(n - del.filter(x => x < n).length) + r; };
+    for (const t of targets) {
+      const f = zip.file(t); if (!f || !/comments|threadedComment/.test(t) && !/vmlDrawing/.test(t)) continue;
+      let x = await f.async('string');
+      if (/vmlDrawing/.test(t)) {
+        x = x.replace(/<x:Column>(\d+)<\/x:Column>/g, (m, c) => `<x:Column>${+c + 1 > Math.min(...del) ? +c - del.filter(d => d < +c + 1).length : c}</x:Column>`);
+        x = x.replace(/<x:Anchor>([^<]*)<\/x:Anchor>/g, (m, a) => { const p = a.trim().split(/\s*,\s*/).map(Number); [0, 4].forEach(i => { p[i] = p[i] - del.filter(d => d < p[i] + 1).length; }); return `<x:Anchor>${p.join(', ')}</x:Anchor>`; });
+      } else x = x.replace(/ref="([A-Z]+)(\d+)"/g, (m, c, r) => `ref="${fixRef(c, r)}"`);
+      zip.file(t, x);
+    }
+  }
+  function findTotalsRow(xml, from) {
+    const sp = splitSheet(xml);
+    const row = sp.rows.find(r => r.n >= from && /<f[^>]*>(?:_xlfn\.)?(SUBTOTAL|SUM)\(/.test(r.xml));
+    return row ? row.n : null;
+  }
+
+  async function sheetPaths(zip) {
+    const wb = await zip.file('xl/workbook.xml').async('string');
+    const rels = await zip.file('xl/_rels/workbook.xml.rels').async('string');
+    const relMap = {};
+    rels.replace(/<Relationship [^>]*>/g, r => { relMap[attr(r,'Id')] = attr(r,'Target'); return r; });
+    const out = {};
+    wb.replace(/<sheet [^>]*>/g, s => {
+      const name = attr(s,'name').replace(/&amp;/g,'&'); const t = relMap[attr(s,'r:id')];
+      out[name] = t.startsWith('/') ? t.slice(1) : 'xl/' + t; return s;
+    });
+    return out;
+  }
+
+  // ---------- empeo payroll report ----------
+  function parseReport(XLSX, buf) {
+    const wb = XLSX.read(buf, { type: 'array', cellDates: false });
+    for (const name of wb.SheetNames) {
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, raw: true, defval: '' });
+      const h = rows.findIndex(r => r.some(v => norm(v) === norm('รหัสพนักงาน')));
+      if (h < 0) continue;
+      const header = rows[h].map(v => String(v).trim());
+      const groupRaw = h > 0 ? rows[h-1] : [];
+      const groups = []; let g = '';
+      header.forEach((_, i) => { if (String(groupRaw[i]||'').trim()) g = String(groupRaw[i]).trim(); groups.push(g); });
+      const codeIdx = header.findIndex(v => norm(v) === norm('รหัสพนักงาน'));
+      const data = rows.slice(h+1).filter(r => { const c = codeKey(r[codeIdx]); return c && !/^(total|รวม)/i.test(c); });
+      const totalRow = rows.slice(h+1).find(r => /^(total|รวม)/i.test(codeKey(r[codeIdx])));
+      return { sheetName: name, header, groups, codeIdx, data, rawRows: rows, headerRow: h, totalRow };
+    }
+    throw new Error('ไม่พบคอลัมน์ "รหัสพนักงาน" ในไฟล์รายงาน — ตรวจว่าเป็นรายงานสรุปงวดเงินเดือนที่ export จาก empeo');
+  }
+  // Default column mapping: target col -> report column index (or -1)
+  function autoMap(report, targets, section) {
+    const map = {}; const used = new Set();
+    for (const [col, , cands] of targets) {
+      let idx = -1;
+      for (const c of cands) {
+        idx = report.header.findIndex((h, i) => !used.has(i) && norm(h) === norm(c) && (!section || !section(report.groups[i], h)));
+        if (idx >= 0) break;
+      }
+      if (idx >= 0) used.add(idx);
+      map[col] = idx;
+    }
+    return map;
+  }
+
+  // ---------- template ----------
+  function detectCompany(XLSX, buf) {
+    const wb = XLSX.read(buf, { type: 'array', sheetRows: 3 });
+    for (const n of wb.SheetNames) { const ws = wb.Sheets[n]; const v = ws && ws.A1 && String(ws.A1.v || '');
+      const co = v && COMPANIES.find(c => c.match.test(v)); if (co) return co.key; }
+    return null;
+  }
+  async function inspectTemplate(JSZip, XLSX, buf, co) {
+    co = co || COMPANIES[0];
+    const wb = XLSX.read(buf, { type: 'array', cellDates: false, bookSheets: false });
+    const need = [SHEET_ID, SHEET_ROUND].concat(co.ot ? [co.ot.sheet] : []);
+    const missing = need.filter(n => !wb.SheetNames.includes(n));
+    if (missing.length) throw new Error('ไฟล์ต้นแบบไม่มีชีต: ' + missing.join(', '));
+    const rowsOf = n => XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true, defval: '' });
+    const id = rowsOf(SHEET_ID);
+    const employees = [];
+    for (let i = co.idFirstRow - 1; i < id.length; i++) { const r = id[i]; const c = codeKey(r[0]); if (!c || /^total/i.test(c)) continue; if (!r[1]) continue; employees.push(r.slice(0, 18)); }
+    const f = employees[0] || [];
+    const style = { codeNum: typeof f[0] === 'number', dateSerial: typeof f[2] === 'number', acctNum: typeof f[15] === 'number', paySerial: typeof f[17] === 'number' };
+    const idHeaders = (id[co.idHeaderRow - 1] || []).map(v => String(v == null ? '' : v).trim());
+    const round = rowsOf(SHEET_ROUND).slice(1, 13).map((r, i) => ({ row: i + 2, month: String(r[1]).trim(), period: r[3], pay: typeof r[5] === 'number' ? r[5] : null }));
+    // which sheets carry the month/year header in row 1
+    const monthCells = [];
+    for (const n of wb.SheetNames) {
+      const ws = wb.Sheets[n]; if (!ws || !ws['!ref']) continue;
+      const rng = XLSX.utils.decode_range(ws['!ref']);
+      for (let c = 0; c <= Math.min(rng.e.c, 30); c++) {
+        const a = XLSX.utils.encode_cell({ r: 0, c }); const v = ws[a] && ws[a].v;
+        if (typeof v === 'string' && MONTHS.includes(v.trim())) {
+          const yA = XLSX.utils.encode_cell({ r: 0, c: c + 1 }); const yv = ws[yA] && ws[yA].v;
+          monthCells.push({ sheet: n, ref: a, yearRef: /^\d{4}$/.test(String(yv)) ? yA : null, was: v.trim() + (yv ? ' ' + yv : '') });
+        }
+      }
+    }
+    // pay date written out as text, e.g. "31 ตุลาคม 2569"
+    const payTextCells = []; const thRe = new RegExp('^\\d{1,2}\\s+(' + TH_MONTHS.join('|') + ')\\s+\\d{4}$');
+    for (const n of wb.SheetNames) { const ws = wb.Sheets[n]; if (!ws) continue;
+      for (const a of Object.keys(ws)) { if (a[0] === '!') continue; const rc = XLSX.utils.decode_cell(a); if (rc.r > 2) continue;
+        const c = ws[a]; if (c && c.t === 's' && !c.f && thRe.test(String(c.v).trim())) payTextCells.push({ sheet: n, ref: a }); } }
+    return { co: co.key, style, payTextCells, idHeaders, sheetNames: wb.SheetNames, hidden: ((wb.Workbook || {}).Sheets || []).filter(s => s.Hidden).map(s => s.name), employees, round, monthCells };
+  }
+
+  /* opts: { year, month(1-12), payDate:{y,m,d} (AD), report|null, idMap, otMap, preferReportInfo } */
+  async function generate(JSZip, XLSX, buf, tpl, opts) {
+    const co = COMPANIES.find(c => c.key === (opts.company || tpl.co)) || COMPANIES[0];
+    const st = tpl.style || { codeNum: true, dateSerial: true, acctNum: true, paySerial: true };
+    const zip = await JSZip.loadAsync(buf);
+    const paths = await sheetPaths(zip);
+    const get = async n => zip.file(paths[n]).async('string');
+    const put = (n, x) => zip.file(paths[n], x);
+    const log = [];
+    const monthName = MONTHS[opts.month - 1];
+    const be = opts.year + 543;
+
+    // 1) month + year in every sheet header
+    for (const mc of tpl.monthCells) {
+      let x = await get(mc.sheet);
+      x = setCell(x, mc.ref, monthName);
+      if (mc.yearRef) x = setCell(x, mc.yearRef, opts.year);
+      // drop cached results of local formulas so they show the new month (external links keep theirs)
+      x = x.replace(/(<f(?:\s[^>]*)?>([^<]*)<\/f>)<v>[^<]*<\/v>/g, (m, f, t) => /\[\d+\]/.test(t) ? m : f);
+      put(mc.sheet, x);
+      log.push(`${mc.sheet}: ${mc.was} → ${monthName} ${opts.year}`);
+    }
+
+    // 2) รอบ sheet: periods for the target year + this month's pay date
+    {
+      let x = await get(SHEET_ROUND);
+      const firstPay = tpl.round[0] && tpl.round[0].pay;
+      const yearChanged = firstPay && fromSerial(firstPay).y !== opts.year;
+      for (const r of tpl.round) {
+        const m = MONTHS.indexOf(r.month) + 1; if (m < 1) continue;
+        if (yearChanged) {
+          x = setCell(x, 'D' + r.row, `1 ${TH_MONTHS[m-1]} ${be} - ${daysIn(opts.year, m)} ${TH_MONTHS[m-1]} ${be}`);
+          if (r.pay) { const p = fromSerial(r.pay); x = setCell(x, 'F' + r.row, serial(opts.year, m, Math.min(p.d, daysIn(opts.year, m)))); }
+        }
+        if (m === opts.month) x = setCell(x, 'F' + r.row, serial(opts.payDate.y, opts.payDate.m, opts.payDate.d));
+      }
+      put(SHEET_ROUND, x);
+      log.push(`รอบ: วันจ่าย ${monthName} = ${opts.payDate.d}/${opts.payDate.m}/${opts.payDate.y}` + (yearChanged ? ` · ปรับปฏิทินทั้งปีเป็น ${opts.year}` : ''));
+    }
+
+    // 2b) pay date written as Thai text
+    for (const pc of tpl.payTextCells || []) {
+      put(pc.sheet, setCell(await get(pc.sheet), pc.ref, `${opts.payDate.d} ${TH_MONTHS[opts.payDate.m - 1]} ${opts.payDate.y + 543}`));
+    }
+    // 3) employee list
+    const pad = n => String(n).padStart(2, '0');
+    const payR = st.paySerial ? serial(opts.payDate.y + 543, opts.payDate.m, opts.payDate.d) // template keeps วันจ่ายเงิน in พ.ศ.
+      : `${pad(opts.payDate.d)}/${pad(opts.payDate.m)}/${opts.payDate.y + 543}`;
+    const asCode = v => st.codeNum ? codeVal(v) : codeKey(v);
+    const tplInfo = new Map(tpl.employees.map(r => [codeKey(r[0]), r]));
+    const rep = opts.report;
+    const parseThaiDate = v => {
+      if (typeof v === 'number') return v;
+      const m = String(v||'').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      return m ? serial(+m[3], +m[2], +m[1]) : (v || '');
+    };
+    const infoFromReport = r => {
+      // the report's first 18 columns are the same general-info block as the template's A–R
+      const o = {}; INFO_COLS.forEach((c, i) => {
+        let v = r[i] === undefined ? '' : r[i];
+        if (c === 'A') v = asCode(v);
+        else if ((c === 'C' || (c === 'D' && v && v !== '-')) && st.dateSerial) v = parseThaiDate(v);
+        else if (c === 'P') v = st.acctNum ? codeVal(v) : String(v);
+        else v = v === undefined ? '' : v;
+        o[c] = v;
+      });
+      return o;
+    };
+    const infoFromTpl = r => { const o = {}; INFO_COLS.forEach((c, i) => { o[c] = r[i] === undefined ? '' : r[i]; }); o.A = asCode(o.A); return o; };
+
+    let people; const stats = { total: 0, matched: 0, added: [], dropped: [] };
+    if (rep) {
+      people = rep.data.map(r => {
+        const key = codeKey(r[rep.codeIdx]); const t = tplInfo.get(key);
+        if (t) stats.matched++; else stats.added.push(`${key} ${r[rep.header.findIndex(h => norm(h) === norm('ชื่อ-นามสกุล'))] || ''}`.trim());
+        const info = (t && !opts.preferReportInfo) ? infoFromTpl(t) : infoFromReport(r);
+        info.R = payR;
+        return { info, row: r };
+      });
+      const repCodes = new Set(rep.data.map(r => codeKey(r[rep.codeIdx])));
+      tpl.employees.forEach(t => { if (!repCodes.has(codeKey(t[0]))) stats.dropped.push(`${codeKey(t[0])} ${t[1] || ''}`.trim()); });
+    } else {
+      people = tpl.employees.map(t => { const info = infoFromTpl(t); info.R = payR; return { info, row: null }; });
+    }
+    stats.total = people.length;
+
+    // 4) Income - Deduct — target columns found by header name (row 7), so the layout may change
+    {
+      const hdr = tpl.idHeaders || []; const used = new Set(); const colOf = {};
+      for (const [key, label, cands, tplNames] of co.idTargets) {
+        const names = (tplNames || [label]).concat(cands || []).map(norm);
+        const i = hdr.findIndex((h, j) => j >= 18 && !used.has(j) && h && names.includes(norm(h)));
+        if (i >= 0) { used.add(i); colOf[key] = colName(i + 1); }
+      }
+      const lastHdr = hdr.reduce((a, h, i) => h ? i : a, 0);
+      const blankCols = []; for (let i = 18; i <= lastHdr; i++) if (!hdr[i]) blankCols.push(colName(i + 1));
+      const rows = people.map(p => {
+        const d = Object.assign({}, p.info);
+        for (const [key] of co.idTargets) { if (!colOf[key]) continue; const idx = opts.idMap ? opts.idMap[key] : -1; d[colOf[key]] = (p.row && idx >= 0) ? toNum(p.row[idx]) : 0; }
+        blankCols.forEach(c => { d[c] = 0; });
+        return d;
+      });
+      const src = await get(SHEET_ID); const tot = findTotalsRow(src, co.idFirstRow);
+      const sp = splitSheet(src); const before = sp.rows.find(r => r.n === tot - 1);
+      const blank = before && !/<c r="A\d+"[^>]*>\s*<v>/.test(before.xml) && !/<c r="A\d+"[^>]*t="(s|inlineStr)"/.test(before.xml) ? tot - 1 : null;
+      const r = rebuild(src, { firstRow: co.idFirstRow, rows, blankProtoRow: blank, gap: 6, totalsRow: tot,
+        totalsFormula: (c, a, b) => `SUBTOTAL(9,${c}${a}:${c}${b})` });
+      let x = r.xml;
+      if (blankCols.length && co.dropBlank && opts.dropBlankIdCols !== false) {
+        x = dropColumns(x, blankCols); await shiftComments(zip, paths[SHEET_ID], blankCols);
+        log.push(`Income - Deduct: ลบคอลัมน์ว่าง ${blankCols.join(', ')}`);
+      }
+      put(SHEET_ID, x);
+      const missing = co.idTargets.filter(([k]) => !colOf[k]).map(t => t[1]);
+      log.push(`Income - Deduct: ${rows.length} คน (แถว ${co.idFirstRow}–${r.lastData}) · รวมที่แถว ${r.totalRow}` + (missing.length ? ` · ไม่พบหัวคอลัมน์: ${missing.join(', ')}` : ''));
+    }
+    // 5) OT hours (only customers that have an OT sheet)
+    if (co.ot && paths[co.ot.sheet]) {
+      const SHEET_OT = co.ot.sheet;
+      const rows = people.map(p => {
+        const d = Object.assign({}, p.info);
+        for (const [col] of co.ot.targets) { const idx = opts.otMap ? opts.otMap[col] : -1; d[col] = (p.row && idx >= 0) ? toNum(p.row[idx]) : 0; }
+        return d;
+      });
+      const r = rebuild(await get(SHEET_OT), { firstRow: co.ot.firstRow, rows, totalsRow: findTotalsRow(await get(SHEET_OT), co.ot.firstRow), autoFilterCols: co.ot.autoFilter,
+        totalsFormula: (c, a, b) => `SUM(${c}${a}:${c}${b})` });
+      put(SHEET_OT, r.xml);
+      log.push(`สรุป ชม OT: ${rows.length} คน (แถว ${co.ot.firstRow}–${r.lastData}) · รวมที่แถว ${r.totalRow}`);
+    }
+    // 6) hidden snapshot of the empeo report (same layout as the report)
+    if (rep && paths[SHEET_SUM]) {
+      const x = await get(SHEET_SUM);
+      const sp = splitSheet(x); const hdr = sp.rows.find(r => r.n === co.sumHeaderRow);
+      const tplHeader = hdr ? cellsOf(hdr.xml).length : 0;
+      if (Math.abs(tplHeader - rep.header.filter(Boolean).length) <= 2) {
+        const rows = rep.data.concat(rep.totalRow ? [rep.totalRow] : []).map(r => { const o = {}; r.forEach((v, i) => { if (v !== '' && v != null) o[colName(i+1)] = typeof v === 'number' ? v : String(v); }); return o; });
+        put(SHEET_SUM, rebuild(x, { firstRow: co.sumFirstRow, rows }).xml);
+        log.push(`สรุปงวดเงินเดือน (ชีตซ่อน): อัปเดตจากรายงาน ${rep.data.length} แถว`);
+      } else log.push('สรุปงวดเงินเดือน (ชีตซ่อน): คอลัมน์รายงานไม่ตรงต้นแบบ จึงคงข้อมูลเดิม');
+    }
+
+    // 7) force Excel to recalculate; drop the stale calc chain
+    let wbx = await zip.file('xl/workbook.xml').async('string');
+    wbx = /<calcPr[^>]*fullCalcOnLoad/.test(wbx) ? wbx : wbx.replace(/<calcPr([^>]*?)\/>/, '<calcPr$1 fullCalcOnLoad="1"/>');
+    zip.file('xl/workbook.xml', wbx);
+    if (zip.file('xl/calcChain.xml')) {
+      zip.remove('xl/calcChain.xml');
+      let rels = await zip.file('xl/_rels/workbook.xml.rels').async('string');
+      zip.file('xl/_rels/workbook.xml.rels', rels.replace(/<Relationship [^>]*calcChain[^>]*\/>/, ''));
+      let ct = await zip.file('[Content_Types].xml').async('string');
+      zip.file('[Content_Types].xml', ct.replace(/<Override [^>]*calcChain[^>]*\/>/, ''));
+    }
+    const out = await zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    return { bytes: out, log, stats, fileName: `${co.filePrefix} ${String(opts.month).padStart(2,'0')}.${opts.year}.xlsx` };
+  }
+
+  root.AAEngine = { MONTHS, TH_MONTHS, ID_TARGETS, OT_TARGETS, COMPANIES, detectCompany, parseReport, autoMap, inspectTemplate, generate, fromSerial, toNum, norm, colName };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(function(){
+  const E = window.AAEngine;
+  const $ = id => document.getElementById(id);
+  const TH_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const fmt = n => n.toLocaleString('th-TH', { maximumFractionDigits: 2 });
+  const S = { tplBuf: null, tpl: null, rep: null, idMap: null, otMap: null, last: null, file: null };
+  // ---- remembered base templates, one per customer (this browser only)
+  const store = (() => {
+    let dbp = null;
+    const open = () => dbp || (dbp = new Promise((res, rej) => { try { const r = indexedDB.open('payroll-templates', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('files', { keyPath: 'co' });
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); } catch (e) { rej(e); } }));
+    const tx = async (mode, fn) => { const db = await open(); return new Promise((res, rej) => { const t = db.transaction('files', mode); const q = fn(t.objectStore('files')); t.oncomplete = () => res(q && q.result); t.onerror = () => rej(t.error); }); };
+    return {
+      get: co => tx('readonly', s => s.get(co)).catch(() => null),
+      put: rec => tx('readwrite', s => s.put(rec)).catch(() => null),
+      del: co => tx('readwrite', s => s.delete(co)).catch(() => null),
+    };
+  })();
+  const asFile = rec => ({ name: rec.name, arrayBuffer: async () => rec.bytes.slice(0) });
+  async function showSaved() {
+    const rec = await store.get(CO().key);
+    $('savedBox').hidden = !rec;
+    if (rec) $('savedText').textContent = `${rec.name} · บันทึกเมื่อ ${new Date(rec.savedAt).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' })}`;
+    return rec;
+  }
+  async function remember(name, bytes) {
+    await store.put({ co: CO().key, name, bytes: bytes instanceof ArrayBuffer ? bytes.slice(0) : bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), savedAt: Date.now() });
+    await showSaved();
+  }
+  try { $('chkKeepOut').checked = localStorage.getItem('pt-keep-out') === '1'; } catch (e) {}
+  $('chkKeepOut').addEventListener('change', () => { try { localStorage.setItem('pt-keep-out', $('chkKeepOut').checked ? '1' : '0'); } catch (e) {} });
+  const CO = () => E.COMPANIES.find(c => c.key === $('selCo').value) || E.COMPANIES[0];
+  E.COMPANIES.forEach(c => { const o = document.createElement('option'); o.value = c.key; o.textContent = c.name + (c.code ? ` (${c.code})` : ''); $('selCo').appendChild(o); });
+  try { const k = localStorage.getItem('pt-company'); if (k && E.COMPANIES.some(c => c.key === k)) $('selCo').value = k; } catch (e) {}
+  function paintCompany() {
+    const co = CO();
+    $('coBand').textContent = co.name;
+    $('exampleName').textContent = `${co.filePrefix} 10.2026.xlsx`;
+    $('s3sub').textContent = co.ot ? `ใช้เติมชีต Income - Deduct และ ${co.ot.sheet}` : 'ใช้เติมชีต Income - Deduct';
+    $('mapOt').hidden = !co.ot; $('dropWrap').hidden = !co.dropBlank;
+    try { localStorage.setItem('pt-company', co.key); } catch (e) {}
+  }
+  function clearTemplate() { S.tpl = null; S.tplBuf = null; S.file = null; $('tplInfo').hidden = true; $('coWarn').hidden = true; $('tplName').textContent = 'ยังไม่ได้เลือกไฟล์'; refresh(); }
+  async function loadRemembered() {
+    const rec = await showSaved();
+    if (rec) await loadTemplate(asFile(rec), true, true); else clearTemplate();
+  }
+  $('selCo').addEventListener('change', async () => { paintCompany(); await loadRemembered(); rebuildMaps(); });
+  $('btnForget').addEventListener('click', async () => { await store.del(CO().key); await showSaved(); clearTemplate(); });
+  paintCompany();
+
+  // ---- period defaults: current month in Bangkok time
+  const bkk = new Date(Date.now() + 7 * 3600e3);
+  E.MONTHS.forEach((m, i) => { const o = document.createElement('option'); o.value = i + 1; o.textContent = `${E.TH_MONTHS[i]} (${m})`; $('selMonth').appendChild(o); });
+  $('selMonth').value = bkk.getUTCMonth() + 1; $('inpYear').value = bkk.getUTCFullYear();
+
+  const lastWorkday = (y, m) => { const d = new Date(Date.UTC(y, m, 0)); while ([0,6].includes(d.getUTCDay())) d.setUTCDate(d.getUTCDate() - 1); return d; };
+  const iso = d => d.toISOString().slice(0, 10);
+  function defaultPay() {
+    const y = +$('inpYear').value, m = +$('selMonth').value;
+    let d = null, src = 'วันทำงานสุดท้ายของเดือน';
+    if (S.tpl) {
+      const r = S.tpl.round.find(x => x.month === E.MONTHS[m - 1]);
+      if (r && r.pay) { const p = E.fromSerial(r.pay); if (p.y === y) { d = new Date(Date.UTC(p.y, p.m - 1, p.d)); src = 'ชีต “รอบ” ในไฟล์ต้นแบบ'; } }
+    }
+    if (!d) d = lastWorkday(y, m);
+    $('inpPay').value = iso(d);
+    $('payHint').textContent = `วันจ่ายตั้งตาม${src} แก้ได้ถ้าเลื่อนวันจ่าย ระบบจะใส่ในคอลัมน์ “วันจ่ายเงิน” เป็น พ.ศ. ตามรูปแบบเดิม`;
+    refresh();
+  }
+  $('selMonth').addEventListener('change', defaultPay);
+  $('inpYear').addEventListener('change', defaultPay);
+  $('inpPay').addEventListener('change', refresh);
+
+  // ---- drop zones
+  function wireDrop(zoneId, inputId, handler) {
+    const z = $(zoneId), inp = $(inputId);
+    inp.addEventListener('change', () => inp.files[0] && handler(inp.files[0]));
+    ['dragenter','dragover'].forEach(ev => z.addEventListener(ev, e => { e.preventDefault(); z.classList.add('over'); }));
+    ['dragleave','drop'].forEach(ev => z.addEventListener(ev, e => { e.preventDefault(); z.classList.remove('over'); }));
+    z.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) handler(f); });
+  }
+  async function loadTemplate(f, keepCompany, fromStore) {
+    $('tplErr').hidden = true; $('coWarn').hidden = true; $('tplName').textContent = f.name; S.file = f;
+    try {
+      const buf = await f.arrayBuffer();
+      const found = E.detectCompany(XLSX, new Uint8Array(buf));
+      if (found && !keepCompany && found !== $('selCo').value) { $('selCo').value = found; paintCompany(); }
+      if (found && found !== $('selCo').value) { $('coWarn').textContent = `ไฟล์นี้เป็นของ ${E.COMPANIES.find(c => c.key === found).name} แต่เลือกบริษัทไว้เป็น ${CO().name}`; $('coWarn').hidden = false; }
+      if (!found) { $('coWarn').textContent = 'ไม่พบชื่อบริษัทในหัวไฟล์ ใช้รูปแบบของบริษัทที่เลือกไว้'; $('coWarn').hidden = false; }
+      const tpl = await E.inspectTemplate(JSZip, XLSX, new Uint8Array(buf), CO());
+      S.tplBuf = buf; S.tpl = tpl;
+      if (!fromStore) await remember(f.name, buf);
+      else $('tplName').textContent = f.name + ' (ไฟล์ที่จำไว้)';
+      const hidden = new Set(tpl.hidden);
+      const key = new Set(['Income - Deduct'].concat(CO().ot ? [CO().ot.sheet] : []));
+      $('sheetChips').innerHTML = '';
+      tpl.sheetNames.forEach(n => { const c = document.createElement('span'); c.className = 'chip' + (hidden.has(n) ? ' hid' : '') + (key.has(n) ? ' key' : ''); c.textContent = n + (hidden.has(n) ? ' · ซ่อน' : ''); $('sheetChips').appendChild(c); });
+      $('tplMeta').textContent = `${tpl.sheetNames.length} ชีต (คงไว้ครบทุกชีต) · พนักงาน ${tpl.employees.length} คน · เดือนเดิมในไฟล์: ${tpl.monthCells[0] ? tpl.monthCells[0].was : '—'}`;
+      $('tplInfo').hidden = false;
+      defaultPay(); rebuildMaps();
+    } catch (e) { S.tpl = null; S.tplBuf = null; $('tplInfo').hidden = true; $('tplErr').textContent = 'อ่านไฟล์ต้นแบบไม่ได้: ' + (e.message || e); $('tplErr').hidden = false; refresh(); }
+  }
+  wireDrop('dropTpl', 'fileTpl', f => loadTemplate(f, false));
+  wireDrop('dropRep', 'fileRep', async f => {
+    $('repErr').hidden = true; $('repName').textContent = f.name;
+    try {
+      S.rep = E.parseReport(XLSX, new Uint8Array(await f.arrayBuffer()));
+      $('repName').textContent = `${f.name} · ${S.rep.data.length} คน`;
+      rebuildMaps();
+    } catch (e) { S.rep = null; $('mapWrap').hidden = true; $('repErr').textContent = e.message || String(e); $('repErr').hidden = false; refresh(); }
+  });
+
+  // ---- column mapping (remembered per browser)
+  const MKEY = () => CO().key + '-template-map-v1';
+  const loadSaved = () => { try { return JSON.parse(localStorage.getItem(MKEY()) || '{}'); } catch (e) { return {}; } };
+  const save = () => { try { const o = {}; for (const [k, m] of [['id', S.idMap], ['ot', S.otMap]]) for (const c in (m || {})) o[k + ':' + c] = m[c] >= 0 ? S.rep.header[m[c]] : ''; localStorage.setItem(MKEY(), JSON.stringify(o)); } catch (e) {} };
+  function rebuildMaps() {
+    if (!S.rep) { refresh(); return; }
+    const saved = loadSaved();
+    const apply = (prefix, targets) => {
+      const m = E.autoMap(S.rep, targets);
+      for (const [col] of targets) { const k = prefix + ':' + col; if (k in saved) { const i = saved[k] ? S.rep.header.findIndex(h => h === saved[k]) : -1; if (!saved[k] || i >= 0) m[col] = i; } }
+      return m;
+    };
+    const co = CO();
+    S.idMap = apply('id', co.idTargets); S.otMap = co.ot ? apply('ot', co.ot.targets) : null;
+    drawMap('mapIdBody', 'mapIdCount', co.idTargets, S.idMap);
+    if (co.ot) drawMap('mapOtBody', 'mapOtCount', co.ot.targets, S.otMap);
+    $('mapWrap').hidden = false; refresh();
+  }
+  function colTotal(idx) { return idx < 0 ? 0 : S.rep.data.reduce((a, r) => a + E.toNum(r[idx]), 0); }
+  function drawMap(bodyId, countId, targets, map) {
+    const tb = $(bodyId); tb.innerHTML = '';
+    const opts = S.rep.header.map((h, i) => h ? `<option value="${i}">${esc((S.rep.groups[i] && S.rep.groups[i] !== h ? S.rep.groups[i] + ' › ' : '') + h)} (${E.colName(i + 1)})</option>` : '').join('');
+    for (const [col, label] of targets) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td class="col">${col}</td><td><span class="dot"></span>${esc(label)}</td><td><select id="map-${bodyId}-${col}" aria-label="แหล่งข้อมูลของ ${esc(label)}"><option value="-1">— ไม่ดึง (ใส่ 0) —</option>${opts}</select></td><td class="num"></td>`;
+      const sel = tr.querySelector('select'), dot = tr.querySelector('.dot'), tot = tr.querySelector('td.num');
+      const paint = () => { const i = map[col]; dot.classList.toggle('on', i >= 0); tot.textContent = i >= 0 ? fmt(colTotal(i)) : '—'; };
+      sel.value = String(map[col]); paint();
+      sel.addEventListener('change', () => { map[col] = +sel.value; paint(); count(); save(); });
+      tb.appendChild(tr);
+    }
+    const count = () => { const n = targets.filter(([c]) => map[c] >= 0).length; $(countId).textContent = `จับคู่แล้ว ${n}/${targets.length} คอลัมน์`; };
+    count();
+  }
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  // ---- summary rail
+  function refresh() {
+    const m = +$('selMonth').value, y = +$('inpYear').value;
+    const label = `${E.TH_MONTHS[m - 1]} ${y + 543}`;
+    $('periodBadge').textContent = `งวด ${E.MONTHS[m - 1]} ${y}`;
+    $('ckPeriod').textContent = label;
+    const p = $('inpPay').value;
+    $('s2').classList.toggle('done', !!p);
+    $('s1').classList.toggle('done', !!S.tpl);
+    $('s3').classList.toggle('done', !!S.rep);
+    $('ckTpl').className = 'pill ' + (S.tpl ? 'ok' : 'wait'); $('ckTpl').textContent = S.tpl ? 'พร้อม' : 'รอไฟล์';
+    $('ckRep').className = 'pill ' + (S.rep ? 'ok' : 'warn'); $('ckRep').textContent = S.rep ? 'พร้อม' : 'ไม่ได้ใส่ (ใส่ 0)';
+    $('kvTpl').textContent = S.tpl ? S.tpl.employees.length : '—';
+    if (S.tpl && S.rep) {
+      const codes = new Set(S.tpl.employees.map(r => String(r[0]).trim()));
+      const rc = S.rep.data.map(r => String(r[S.rep.codeIdx]).trim()); const rs = new Set(rc);
+      $('kvRep').textContent = rc.length;
+      $('kvMatch').textContent = rc.filter(c => codes.has(c)).length;
+      $('kvNew').textContent = rc.filter(c => !codes.has(c)).length;
+      $('kvGone').textContent = [...codes].filter(c => !rs.has(c)).length;
+    } else { $('kvRep').textContent = S.rep ? S.rep.data.length : '—'; $('kvMatch').textContent = $('kvNew').textContent = $('kvGone').textContent = '—'; }
+    $('btnGo').disabled = !(S.tpl && p);
+    $('btnGo').textContent = `สร้าง Template ${E.MONTHS[m - 1]} ${y}`;
+  }
+
+  // ---- generate + download
+  async function offer(res) {
+    const note = $('dlNote'); note.hidden = false; note.className = 'note';
+    let dl = null; try { dl = await window.claude?.use?.('downloads'); } catch (e) {}
+    if (!dl) {
+      const url = URL.createObjectURL(new Blob([res.bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+      const a = document.createElement('a'); a.href = url; a.download = res.fileName; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+      note.className = 'note ok'; note.textContent = 'ดาวน์โหลดแล้ว: ' + res.fileName + ' (ถ้าไฟล์ไม่ขึ้น ให้เปิดหน้านี้ใน Chrome/Edge)';
+      $('btnAgain').hidden = false; return;
+    }
+    try {
+      await dl.save({ filename: res.fileName, data: new Blob([res.bytes]) });
+      note.className = 'note ok'; note.textContent = 'บันทึกแล้ว: ' + res.fileName;
+    } catch (e) {
+      note.className = 'note warn';
+      note.textContent = e && e.code === 'declined' ? 'ยกเลิกการบันทึกไฟล์ กด “ดาวน์โหลดอีกครั้ง” ได้' : 'บันทึกไฟล์ไม่สำเร็จ (' + ((e && (e.code || e.message)) || e) + ')';
+    }
+    $('btnAgain').hidden = false;
+  }
+  $('btnGo').addEventListener('click', async () => {
+    const btn = $('btnGo'); btn.disabled = true; const old = btn.textContent; btn.textContent = 'กำลังสร้างไฟล์…';
+    try {
+      const [py, pm, pd] = $('inpPay').value.split('-').map(Number);
+      const res = await E.generate(JSZip, XLSX, new Uint8Array(S.tplBuf), S.tpl, {
+        year: +$('inpYear').value, month: +$('selMonth').value, payDate: { y: py, m: pm, d: pd },
+        company: CO().key, report: S.rep, idMap: S.idMap, otMap: S.otMap, preferReportInfo: $('chkInfo').checked, dropBlankIdCols: $('chkDrop').checked });
+      S.last = res;
+      if ($('chkKeepOut').checked) { await remember(res.fileName, res.bytes); }
+      $('log').innerHTML = res.log.map(l => `<li>${esc(l)}</li>`).join('');
+      $('resultPanel').hidden = false;
+      $('peopleWrap').hidden = !S.rep;
+      $('newList').innerHTML = res.stats.added.map(x => `<li>${esc(x)}</li>`).join('') || '<li>ไม่มี</li>';
+      $('goneList').innerHTML = res.stats.dropped.map(x => `<li>${esc(x)}</li>`).join('') || '<li>ไม่มี</li>';
+      await offer(res);
+    } catch (e) {
+      const note = $('dlNote'); note.hidden = false; note.className = 'note bad'; note.textContent = 'สร้างไฟล์ไม่สำเร็จ: ' + (e.message || e);
+    } finally { btn.disabled = false; btn.textContent = old; }
+  });
+  $('btnAgain').addEventListener('click', () => S.last && offer(S.last));
+
+  defaultPay();
+  loadRemembered();
+})();
+</script>
