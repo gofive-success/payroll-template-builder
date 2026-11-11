@@ -95,9 +95,41 @@ aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:grid
 .log li{padding-left:16px;position:relative}.log li::before{content:"";position:absolute;left:2px;top:.6em;width:7px;height:7px;border-radius:2px;background:var(--mark)}
 .people{font-size:13px;max-height:160px;overflow:auto;margin:0;padding-left:18px}
 .saved{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;font-size:13.5px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--sunk)}
+.team{list-style:none;margin:0;padding:0;display:grid;gap:10px;font-size:13.5px}
+.team li{display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-items:center}
+.team .tn{font-weight:600;min-width:0}.team .ts{grid-column:1/-1;color:var(--muted);font-size:12.5px;word-break:break-word}
+.btn{text-decoration:none;display:inline-block}
 .btn.small{padding:5px 12px;font-size:13px;font-weight:500}
 .big{width:100%;padding:13px 16px;font-size:16px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.planwrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.plan table{border-collapse:collapse;font-size:12.5px;width:auto;min-width:100%}
+.plan th,.plan td{border:1px solid var(--line);padding:4px 6px;white-space:nowrap}
+.plan thead th{background:var(--mark-soft);color:var(--fg);font-weight:600;text-align:center}
+.plan td.d{width:22px;min-width:22px;padding:2px;text-align:center}
+.plan th.d{width:22px;min-width:22px;padding:2px;font-size:11px;font-weight:500}
+.plan .we{background:var(--sunk)}.plan .hol{background:var(--bad-soft)}
+.plan .grp td{background:var(--sunk);font-weight:600}
+.plan .resp{text-align:center}.plan .x{display:inline-block;min-width:22px;border-radius:5px;color:#fff;font-weight:700;font-size:11px;padding:1px 0}
+.plan .x.e,.plan .bar.e{background:#e8711c}.plan .x.c,.plan .bar.c{background:#2f8fd0}.plan .bar.p{background:#1d2124}
+.plan .bar{display:block;height:14px;border-radius:4px}
+.plan tr.pay td{font-weight:700}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.lg.e{background:#e8711c}.lg.c{background:#2f8fd0}.lg.p{background:#1d2124;outline:1px solid var(--line)}.lg.w{background:var(--sunk);outline:1px solid var(--line)}.lg.h{background:var(--bad-soft);outline:1px solid var(--line)}
+.txt{font:inherit;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg);width:100%;min-width:0}
+textarea.txt{resize:vertical;line-height:1.55}
+.sec{margin:8px 0 0;font-size:15px;font-weight:600}
+.mail{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+@media (max-width:760px){.mail{grid-template-columns:minmax(0,1fr)}}
+.mailform{display:grid;gap:10px;min-width:0}.mailform .field{min-width:0}
+.mailprev{min-width:0}
+.card{background:#ffffff;color:#1d2124;border:1px solid var(--line);border-radius:10px;padding:16px 18px;font-size:14px;line-height:1.65;white-space:pre-wrap;word-break:break-word}
+.card .mh{font-size:12.5px;color:#5f666b;border-bottom:1px solid #e3e5e1;padding-bottom:8px;margin-bottom:10px;white-space:normal}
+.card .sig{border-top:1px solid #e3e5e1;margin-top:12px;padding-top:8px;color:#5f666b}
+.note code{font-family:var(--f-mono);font-size:12.5px;background:var(--surface);padding:1px 6px;border-radius:5px;border:1px solid var(--line)}
+#planRows input,#planRows select{font:inherit;font-size:13px;padding:5px 8px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--fg);width:100%}
+#planRows input[type=number]{width:80px}
 </style>
 
 <header class="band">
@@ -113,6 +145,7 @@ aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:grid
 
 <main class="wrap">
   <div class="steps">
+    <div class="note" id="coNote" hidden><b>บริษัทนี้ไม่ใช้ไฟล์ Template</b> ส่งไฟล์จาก empeo ให้ลูกค้าโดยตรง (รายงานเงินเดือน Excel ใส่รหัสผ่าน และ PDF รายงาน OT001) ใช้หน้านี้สำหรับ Payroll Plan และอีเมลถึงลูกค้า</div>
     <section class="step" id="s1">
       <div class="step-h"><div class="stepno">1</div><div>
         <h2>บริษัทลูกค้าและไฟล์ต้นแบบ</h2>
@@ -132,9 +165,14 @@ aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:grid
         </div>
         <div class="note bad" id="tplErr" hidden></div>
         <div class="saved" id="savedBox" hidden>
-          <div><span class="pill ok">จำไว้แล้ว</span> <span id="savedText"></span></div>
-          <button class="btn small" id="btnForget" type="button">ลืมไฟล์นี้</button>
+          <div style="min-width:0"><span class="pill ok" id="savedPill">จำไว้แล้ว</span> <span id="savedText"></span></div>
+          <div class="row" style="gap:8px">
+            <button class="btn small" id="btnPrev" type="button" hidden>ใช้ไฟล์ก่อนหน้า</button>
+            <button class="btn small" id="btnForget" type="button">ลบไฟล์ที่จำไว้</button>
+          </div>
         </div>
+        <div class="note warn" id="saveErr" hidden></div>
+        <p class="hint" id="storeHint" style="margin:0"></p>
         <label class="hint" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="chkKeepOut"> หลังสร้างไฟล์ ให้จำไฟล์ที่สร้างเป็นต้นแบบของเดือนถัดไป</label>
       </div>
     </section>
@@ -160,11 +198,19 @@ aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:grid
         <p class="sub" id="s3sub">ใช้เติมชีต Income - Deduct และ สรุป ชม OT ที่พนักงานขอ</p>
       </div></div>
       <div class="body">
+        <p class="hint" style="margin:0">หน้าเว็บนี้เข้า empeo หรือ Partner Portal เองไม่ได้ (ต้องใช้การล็อกอินของคุณ) ให้ export รายงานตามขั้นตอนด้านล่าง แล้ววางไฟล์ในกรอบนี้ หรือให้ Claude ทำผ่าน Chrome ให้</p>
         <ol class="how">
           <li>เข้า empeo ของลูกค้าผ่าน Partner Portal → Customer → ⋮ → <b>Remote Support › Payroll</b> แล้วไปที่ <b>เงินเดือน</b> → เลือกงวดของเดือนนี้ แล้วกด <b>คำนวณเงินเดือน</b></li>
           <li>ในหน้างวดเดียวกัน กด <b>ไฟล์เอกสาร → รายงาน → รายงานเงินเดือน → ทั้งหมด</b></li>
           <li>นำไฟล์ที่ได้ (เช่น <span class="fname">Payroll_Report_Period_11_02112026.xlsx</span>) มาวางด้านล่าง ระบบจับคู่คอลัมน์และรหัสพนักงานให้เอง</li>
         </ol>
+        <div class="row" style="align-items:center">
+          <a class="btn" id="lnkPortal" href="https://partner.gofive.co.th/customer/" target="_blank" rel="noopener">เปิด Partner Portal</a>
+          <button class="btn small" id="btnCopyCode" type="button">คัดลอกรหัสลูกค้า</button>
+          <button class="btn primary" id="btnFromDl" type="button">ดึงรายงานล่าสุดจาก Downloads</button>
+          <button class="btn small" id="btnRepick" type="button">เลือกโฟลเดอร์ใหม่</button>
+        </div>
+        <p class="hint" id="dlInfo" style="margin:0">หลัง export จาก empeo กด "ดึงรายงานล่าสุดจาก Downloads" ครั้งแรกให้เลือกโฟลเดอร์ Downloads หนึ่งครั้ง</p>
         <label class="drop" id="dropRep"><input type="file" id="fileRep" accept=".xlsx,.xls,.csv">
           <div><div class="t">เลือกไฟล์รายงานสรุปงวดเงินเดือน</div><div class="d" id="repName">ไม่บังคับ ถ้าไม่ใส่ ยอดในชีต Income - Deduct (และ OT) จะเป็น 0 ทั้งหมด</div></div>
         </label>
@@ -179,10 +225,60 @@ aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:grid
         </div>
       </div>
     </section>
+
+    <section class="step" id="s4">
+      <div class="step-h"><div class="stepno">4</div><div>
+        <h2>Payroll Plan และอีเมลถึงลูกค้า</h2>
+        <p class="sub">กำหนดการของรอบนี้คำนวณจากวันจ่ายในขั้นตอนที่ 2 นับเฉพาะวันทำการ ดาวน์โหลดรูปและ Excel แล้วให้ Claude ร่างอีเมลใน Outlook ให้คุณกดส่ง</p>
+      </div></div>
+      <div class="body">
+        <div class="planwrap"><div class="plan" id="planView"></div></div>
+        <div class="legend"><span><i class="lg e"></i>งานฝั่ง empeo</span><span><i class="lg c"></i>งานฝั่งลูกค้า</span><span><i class="lg p"></i>วันที่เงินเดือนออก</span><span><i class="lg w"></i>เสาร์–อาทิตย์</span><span><i class="lg h"></i>วันหยุด</span></div>
+        <div class="row">
+          <button class="btn" id="btnPlanPng" type="button">ดาวน์โหลดรูป Plan (.png)</button>
+          <button class="btn" id="btnPlanXlsx" type="button">ดาวน์โหลด Excel Plan</button>
+          <button class="btn" id="btnPlanEdit" type="button" aria-expanded="false">แก้ขั้นตอนของบริษัทนี้</button>
+        </div>
+        <div id="planEditor" hidden>
+          <div class="tbl"><table><thead><tr><th>รายการ</th><th>ผู้รับผิดชอบ</th><th class="num">วันทำการก่อนวันจ่าย</th><th></th></tr></thead><tbody id="planRows"></tbody></table></div>
+          <div class="row" style="margin-top:10px">
+            <button class="btn small" id="btnAddStep" type="button">เพิ่มขั้นตอน</button>
+            <button class="btn small" id="btnResetPlan" type="button">คืนค่าเริ่มต้น</button>
+          </div>
+          <div class="field" style="margin-top:10px"><label for="inpHolidays">วันหยุดเพิ่มเติม (นอกจากเสาร์–อาทิตย์) รูปแบบ วว/ดด/ปปปป (พ.ศ.) คั่นด้วยจุลภาค</label><input type="text" id="inpHolidays" class="txt" placeholder="7/12/2569, 10/12/2569, 31/12/2569"></div>
+          <p class="hint" style="margin:6px 0 0">0 = วันจ่าย, 1 = วันทำการก่อนหน้า 1 วัน ข้อมูลนี้บันทึกแยกตามบริษัท</p>
+        </div>
+
+        <h3 class="sec">อีเมลถึงลูกค้า</h3>
+        <div class="mail">
+          <div class="mailform">
+            <div class="field"><label for="mTo">ถึง (To)</label><input type="text" id="mTo" class="txt" placeholder="hr@customer.co.th"></div>
+            <div class="field"><label for="mCc">สำเนา (CC)</label><input type="text" id="mCc" class="txt" placeholder="คั่นหลายอีเมลด้วย ;"></div>
+            <div class="field"><label for="mGreet">ชื่อผู้รับในคำขึ้นต้น</label><input type="text" id="mGreet" class="txt" placeholder="คุณ…"></div>
+            <div class="field"><label for="mSubj">หัวเรื่อง</label><input type="text" id="mSubj" class="txt"></div>
+            <div class="field"><label for="mBody">ข้อความ</label><textarea id="mBody" rows="12" class="txt"></textarea></div>
+            <div class="field"><label for="mSig">ลายเซ็น</label><textarea id="mSig" rows="3" class="txt" placeholder="ชื่อ&#10;Payroll Outsourcing · Gofive&#10;อีเมล"></textarea></div>
+            <div class="row"><button class="btn small" id="btnMailReset" type="button">สร้างข้อความใหม่จาก Plan</button><button class="btn small" id="btnMailSave" type="button">บันทึกผู้รับและลายเซ็น</button></div>
+          </div>
+          <div class="mailprev">
+            <p class="hint" style="margin:0 0 6px">ตัวอย่างที่ลูกค้าจะเห็น</p>
+            <div class="card" id="mPreview"></div>
+            <p class="hint" style="margin:8px 0 0" id="mAttach"></p>
+          </div>
+        </div>
+        <div class="note" id="mailNote">
+          <b>ส่งอีเมล:</b> ดาวน์โหลดรูปและ Excel Plan ไว้ใน Downloads แล้วกด <button class="btn small" id="btnCopyPrompt" type="button">คัดลอกคำสั่งให้ Claude</button> และวางในแชท (คำสั่ง: <code id="mPrompt"></code>)
+          Claude จะเปิด Outlook บน Chrome กรอกผู้รับ หัวเรื่อง ข้อความ และแนบไฟล์ให้ แล้วรอคุณตรวจและกด Send เอง
+        </div>
+        <div class="note"><b>ถ้า Claude ติด limit:</b> กด <button class="btn small" id="btnMailZip" type="button">ดาวน์โหลดร่างอีเมล (.zip)</button> แตกไฟล์แล้วดับเบิลคลิกไฟล์ .eml จะเปิดเป็นอีเมลร่างใน Outlook (แอปบนเครื่อง) พร้อมผู้รับ หัวเรื่อง ข้อความ และไฟล์แนบ ตรวจแล้วกด Send ได้เลย</div>
+        <div class="row"><button class="btn" id="btnCopyMail" type="button">คัดลอกข้อความอีเมล</button><span class="hint" id="copyNote"></span></div>
+      </div>
+    </section>
+
   </div>
 
   <aside>
-    <div class="panel">
+    <div class="panel" id="readyPanel">
       <h3>พร้อมสร้างไฟล์</h3>
       <ul class="checks">
         <li>ไฟล์ต้นแบบ <span class="pill wait" id="ckTpl">รอไฟล์</span></li>
@@ -199,6 +295,10 @@ aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:grid
       <button class="btn primary big" id="btnGo" disabled>สร้าง Template</button>
       <div class="note" id="dlNote" hidden></div>
     </div>
+    <div class="panel">
+      <h3>ไฟล์ต้นแบบของลูกค้า</h3>
+      <ul class="team" id="teamList"></ul>
+    </div>
     <div class="panel" id="resultPanel" hidden>
       <h3>สิ่งที่เปลี่ยนในไฟล์</h3>
       <ul class="log" id="log"></ul>
@@ -213,6 +313,7 @@ aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:grid
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script>
 /* Payroll Outsourcing template engine (multi-company) — edits the xlsx XML directly so every
    sheet, style, hidden tab, comment and formula in the base file is kept. */
@@ -276,12 +377,14 @@ aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:grid
   ];
   // One entry per customer: where things sit in that customer's template.
   const COMPANIES = [
-    { key: 'aa', name: 'บริษัท เอเชี่ยน แอสฟัลท์ จำกัด', code: 'C2000179', match: /เอเชี่ยน\s*แอสฟัลท์|asian\s*asphalt/i,
+    { key: 'aa', name: 'บริษัท เอเชี่ยน แอสฟัลท์ จำกัด', code: 'C2000179', short: 'บจก. เอเชี่ยนแอสฟัลท์', match: /เอเชี่ยน\s*แอสฟัลท์|asian\s*asphalt/i,
       filePrefix: 'Asian Asphalt_Template กรอกข้อมูล', idHeaderRow: 7, idFirstRow: 8, idTargets: ID_TARGETS, dropBlank: true,
       ot: { sheet: 'สรุป ชม OT ที่พนักงานขอ', firstRow: 4, targets: OT_TARGETS, autoFilter: ['A','AH'] }, sumHeaderRow: 2, sumFirstRow: 3 },
-    { key: 'yan', name: 'บริษัท ย่านสถาปนิก จำกัด', code: '', match: /ย่าน\s*สถาปนิก/,
+    { key: 'yan', name: 'บริษัท ย่านสถาปนิก จำกัด', code: 'C2418452', short: 'บจก. ย่านสถาปนิก', match: /ย่าน\s*สถาปนิก/,
       filePrefix: 'ย่านสถาปนิก_Template กรอกข้อมูล', idHeaderRow: 6, idFirstRow: 7, idTargets: YAN_TARGETS, dropBlank: false,
       ot: null, sumHeaderRow: 3, sumFirstRow: 4 },
+    { key: 'mac', name: 'บริษัท แมค โมเดิร์น ดิสทริบิวชั่น จำกัด', code: 'C2000229', match: /แมค\s*โมเดิร์น|mac\s*modern/i,
+      template: false, short: 'บจก. แมค โมเดิร์น ดิสทริบิวชั่น' },
   ];
   const INFO_COLS = 'A B C D E F G H I J K L M N O P Q R'.split(' ');
 
@@ -703,28 +806,111 @@ aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:grid
   const TH_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   const fmt = n => n.toLocaleString('th-TH', { maximumFractionDigits: 2 });
   const S = { tplBuf: null, tpl: null, rep: null, idMap: null, otMap: null, last: null, file: null };
-  // ---- remembered base templates, one per customer (this browser only)
-  const store = (() => {
+  // ---- remembered base templates, one per customer.
+  // Published on claude.ai: shared with the team (db row + asset). Opened as a local file: this browser only (IndexedDB).
+  const local = (() => {
     let dbp = null;
-    const open = () => dbp || (dbp = new Promise((res, rej) => { try { const r = indexedDB.open('payroll-templates', 1);
-      r.onupgradeneeded = () => r.result.createObjectStore('files', { keyPath: 'co' });
+    const open = () => dbp || (dbp = new Promise((res, rej) => { try { const r = indexedDB.open('payroll-templates', 2);
+      r.onupgradeneeded = () => { const d = r.result; if (!d.objectStoreNames.contains('files')) d.createObjectStore('files', { keyPath: 'co' }); if (!d.objectStoreNames.contains('handles')) d.createObjectStore('handles'); };
       r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); } catch (e) { rej(e); } }));
     const tx = async (mode, fn) => { const db = await open(); return new Promise((res, rej) => { const t = db.transaction('files', mode); const q = fn(t.objectStore('files')); t.oncomplete = () => res(q && q.result); t.onerror = () => rej(t.error); }); };
+    const htx = async (mode, fn) => { const db = await open(); return new Promise((res, rej) => { const t = db.transaction('handles', mode); const q = fn(t.objectStore('handles')); t.oncomplete = () => res(q && q.result); t.onerror = () => rej(t.error); }); };
     return {
+      getHandle: k => htx('readonly', s => s.get(k)).catch(() => null),
+      putHandle: (k, h) => htx('readwrite', s => s.put(h, k)).catch(() => null),
       get: co => tx('readonly', s => s.get(co)).catch(() => null),
       put: rec => tx('readwrite', s => s.put(rec)).catch(() => null),
       del: co => tx('readwrite', s => s.delete(co)).catch(() => null),
     };
   })();
+  const shared = { ready: false, db: null, assets: null, user: null, canWrite: false };
+  const capsReady = (async () => {
+    try {
+      if (!window.claude || !window.claude.use) return;
+      const [db, assets, user] = await Promise.all([claude.use('db'), claude.use('assets'), claude.use('user')]);
+      if (db) Object.assign(shared, { ready: true, db, assets, user, canWrite: !!assets });
+    } catch (e) {}
+  })();
+  const b64enc = u8 => { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); };
+  const b64dec = s => { const bin = atob(s.trim()); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u.buffer; };
+  const noEdit = () => Object.assign(new Error('ต้องมีสิทธิ์ Editor ของหน้านี้จึงจะบันทึกหรือลบไฟล์ต้นแบบของทีมได้ ไฟล์นี้ใช้ได้เฉพาะรอบนี้'), { code: 'no_edit' });
+  const store = {
+    async meta(co) {
+      await capsReady;
+      if (!shared.ready) { const r = await local.get(co); return r ? { name: r.name, savedAt: r.savedAt, shared: false } : null; }
+      const s = await shared.db.doc('templates/' + co).get();
+      return s.exists ? Object.assign({ shared: true }, s.data()) : null;
+    },
+    async get(co) {
+      await capsReady;
+      if (!shared.ready) return local.get(co);
+      const d = await store.meta(co); if (!d) return null;
+      const r = await fetch('/_blob/' + d.assetId);
+      if (!r.ok) throw new Error('โหลดไฟล์ต้นแบบของทีมไม่ได้ (' + r.status + ') ลองอัปโหลดไฟล์ใหม่');
+      return Object.assign({}, d, { co, bytes: b64dec(await r.text()) });
+    },
+    async put(rec) {
+      await capsReady;
+      if (!shared.ready) return local.put(rec);
+      if (!shared.canWrite) throw noEdit();
+      const ref = shared.db.doc('templates/' + rec.co); const old = await ref.get(); const od = old.exists ? old.data() : null;
+      const up = await shared.assets.upload(new Blob([b64enc(new Uint8Array(rec.bytes))], { type: 'text/plain' }), { type: 'text/plain' });
+      let me = null; try { me = await shared.user.id(); } catch (e) {}
+      await ref.set({ name: rec.name, assetId: up.id, size: rec.bytes.byteLength, savedAt: rec.savedAt, savedBy: me || null,
+        prevAssetId: od ? od.assetId : null, prevName: od ? od.name : null, prevSavedAt: od ? od.savedAt : null, prevSavedBy: od ? (od.savedBy || null) : null });
+      if (od && od.prevAssetId) { try { await shared.assets.delete(od.prevAssetId); } catch (e) {} } // keep two versions
+    },
+    async restorePrev(co) {
+      await capsReady; if (!shared.ready) return; if (!shared.canWrite) throw noEdit();
+      const ref = shared.db.doc('templates/' + co); const s = await ref.get(); if (!s.exists) return; const d = s.data(); if (!d.prevAssetId) return;
+      await ref.set({ name: d.prevName, assetId: d.prevAssetId, size: d.size, savedAt: d.prevSavedAt, savedBy: d.prevSavedBy || null,
+        prevAssetId: d.assetId, prevName: d.name, prevSavedAt: d.savedAt, prevSavedBy: d.savedBy || null });
+    },
+    async del(co) {
+      await capsReady;
+      if (!shared.ready) return local.del(co);
+      if (!shared.canWrite) throw noEdit();
+      const ref = shared.db.doc('templates/' + co); const s = await ref.get(); if (!s.exists) return; const d = s.data();
+      await ref.delete();
+      for (const id of [d.assetId, d.prevAssetId]) if (id) { try { await shared.assets.delete(id); } catch (e) {} }
+    },
+  };
   const asFile = rec => ({ name: rec.name, arrayBuffer: async () => rec.bytes.slice(0) });
+  const when = t => t ? new Date(t).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+  async function nameOf(id) { if (!id || !shared.user) return ''; try { const ps = await shared.user.profiles([id]); return (ps[id] && ps[id].name) || ''; } catch (e) { return ''; } }
   async function showSaved() {
-    const rec = await store.get(CO().key);
-    $('savedBox').hidden = !rec;
-    if (rec) $('savedText').textContent = `${rec.name} · บันทึกเมื่อ ${new Date(rec.savedAt).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' })}`;
-    return rec;
+    let d = null; try { d = await store.meta(CO().key); } catch (e) {}
+    $('savedBox').hidden = !d; $('btnPrev').hidden = !(d && d.shared && d.prevAssetId && shared.canWrite);
+    $('btnForget').hidden = !!(d && d.shared && !shared.canWrite);
+    if (d) {
+      const by = d.shared ? await nameOf(d.savedBy) : '';
+      $('savedPill').textContent = d.shared ? 'ไฟล์ของทีม' : 'จำไว้ในเครื่องนี้';
+      $('savedText').textContent = `${d.name} · บันทึกเมื่อ ${when(d.savedAt)}${by ? ' โดย ' + by : ''}` + (d.prevName ? ` · ก่อนหน้า: ${d.prevName}` : '');
+    }
+    $('storeHint').textContent = !shared.ready ? 'เปิดจากไฟล์ในเครื่อง: ไฟล์ต้นแบบจำไว้เฉพาะเบราว์เซอร์นี้'
+      : shared.canWrite ? 'ไฟล์ต้นแบบที่อัปโหลดจะแชร์ให้ทุกคนในทีมที่เปิดหน้านี้'
+      : 'คุณดูและใช้ไฟล์ต้นแบบของทีมได้ การอัปโหลดแทนที่ต้องมีสิทธิ์ Editor';
+    teamList();
+    return d;
+  }
+  async function teamList() {
+    const ul = $('teamList'); if (!ul) return;
+    const rows = await Promise.all(E.COMPANIES.filter(c => c.template !== false).map(async c => { let d = null; try { d = await store.meta(c.key); } catch (e) {} return [c, d]; }));
+    ul.innerHTML = '';
+    for (const [c, d] of rows) {
+      const li = document.createElement('li');
+      const by = d && d.shared ? await nameOf(d.savedBy) : '';
+      li.innerHTML = `<span class="tn"></span><span class="pill ${d ? 'ok' : 'wait'}">${d ? 'มีไฟล์' : 'ยังไม่มี'}</span><span class="ts"></span>`;
+      li.querySelector('.tn').textContent = c.name;
+      li.querySelector('.ts').textContent = d ? `${d.name} · ${when(d.savedAt)}${by ? ' · ' + by : ''}` : 'อัปโหลดไฟล์ต้นแบบเดือนก่อนในขั้นตอนที่ 1';
+      ul.appendChild(li);
+    }
   }
   async function remember(name, bytes) {
-    await store.put({ co: CO().key, name, bytes: bytes instanceof ArrayBuffer ? bytes.slice(0) : bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), savedAt: Date.now() });
+    $('saveErr').hidden = true;
+    try {
+      await store.put({ co: CO().key, name, bytes: bytes instanceof ArrayBuffer ? bytes.slice(0) : bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), savedAt: Date.now() });
+    } catch (e) { $('saveErr').textContent = e.code === 'no_edit' ? e.message : 'บันทึกไฟล์ต้นแบบไม่สำเร็จ: ' + (e.message || e.code || e); $('saveErr').hidden = false; }
     await showSaved();
   }
   try { $('chkKeepOut').checked = localStorage.getItem('pt-keep-out') === '1'; } catch (e) {}
@@ -735,18 +921,33 @@ aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:grid
   function paintCompany() {
     const co = CO();
     $('coBand').textContent = co.name;
-    $('exampleName').textContent = `${co.filePrefix} 10.2026.xlsx`;
-    $('s3sub').textContent = co.ot ? `ใช้เติมชีต Income - Deduct และ ${co.ot.sheet}` : 'ใช้เติมชีต Income - Deduct';
+    const tmpl = co.template !== false;
+    $('s1').hidden = !tmpl; $('s3').hidden = !tmpl; $('readyPanel').hidden = !tmpl; $('coNote').hidden = tmpl;
+    if (co.filePrefix) $('exampleName').textContent = `${co.filePrefix} 10.2026.xlsx`;
+    if (tmpl) $('s3sub').textContent = co.ot ? `ใช้เติมชีต Income - Deduct และ ${co.ot.sheet}` : 'ใช้เติมชีต Income - Deduct';
     $('mapOt').hidden = !co.ot; $('dropWrap').hidden = !co.dropBlank;
     try { localStorage.setItem('pt-company', co.key); } catch (e) {}
   }
   function clearTemplate() { S.tpl = null; S.tplBuf = null; S.file = null; $('tplInfo').hidden = true; $('coWarn').hidden = true; $('tplName').textContent = 'ยังไม่ได้เลือกไฟล์'; refresh(); }
   async function loadRemembered() {
-    const rec = await showSaved();
-    if (rec) await loadTemplate(asFile(rec), true, true); else clearTemplate();
+    const meta = await showSaved();
+    if (!meta) { clearTemplate(); return; }
+    $('tplName').textContent = 'กำลังโหลดไฟล์ต้นแบบ…';
+    try { const rec = await store.get(CO().key); if (rec) await loadTemplate(asFile(rec), true, true); else clearTemplate(); }
+    catch (e) { clearTemplate(); $('tplErr').textContent = e.message || String(e); $('tplErr').hidden = false; }
   }
-  $('selCo').addEventListener('change', async () => { paintCompany(); await loadRemembered(); rebuildMaps(); });
-  $('btnForget').addEventListener('click', async () => { await store.del(CO().key); await showSaved(); clearTemplate(); });
+  $('selCo').addEventListener('change', async () => { paintCompany(); await loadRemembered(); rebuildMaps(); loadPlanCfg(); });
+  let forgetArmed = null;
+  $('btnForget').addEventListener('click', async () => {
+    const b = $('btnForget');
+    if (!forgetArmed) { b.textContent = 'กดอีกครั้งเพื่อลบ'; forgetArmed = setTimeout(() => { forgetArmed = null; b.textContent = 'ลบไฟล์ที่จำไว้'; }, 4000); return; }
+    clearTimeout(forgetArmed); forgetArmed = null; b.textContent = 'ลบไฟล์ที่จำไว้';
+    try { await store.del(CO().key); clearTemplate(); } catch (e) { $('saveErr').textContent = e.message || String(e); $('saveErr').hidden = false; }
+    await showSaved();
+  });
+  $('btnPrev').addEventListener('click', async () => {
+    try { await store.restorePrev(CO().key); await loadRemembered(); } catch (e) { $('saveErr').textContent = e.message || String(e); $('saveErr').hidden = false; }
+  });
   paintCompany();
 
   // ---- period defaults: current month in Bangkok time
@@ -802,14 +1003,47 @@ aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:grid
     } catch (e) { S.tpl = null; S.tplBuf = null; $('tplInfo').hidden = true; $('tplErr').textContent = 'อ่านไฟล์ต้นแบบไม่ได้: ' + (e.message || e); $('tplErr').hidden = false; refresh(); }
   }
   wireDrop('dropTpl', 'fileTpl', f => loadTemplate(f, false));
-  wireDrop('dropRep', 'fileRep', async f => {
+  async function loadReport(f) {
     $('repErr').hidden = true; $('repName').textContent = f.name;
     try {
       S.rep = E.parseReport(XLSX, new Uint8Array(await f.arrayBuffer()));
       $('repName').textContent = `${f.name} · ${S.rep.data.length} คน`;
       rebuildMaps();
     } catch (e) { S.rep = null; $('mapWrap').hidden = true; $('repErr').textContent = e.message || String(e); $('repErr').hidden = false; refresh(); }
-  });
+  }
+  wireDrop('dropRep', 'fileRep', loadReport);
+  // ---- Partner Portal shortcut + pick the newest empeo report straight from the Downloads folder (Chrome/Edge)
+  $('btnCopyCode').addEventListener('click', () => { const c = CO().code || ''; navigator.clipboard.writeText(c).then(() => { $('dlInfo').textContent = 'คัดลอกรหัส ' + c + ' แล้ว'; }, () => { $('dlInfo').textContent = 'รหัสลูกค้า: ' + c; }); });
+  const canPick = typeof window.showDirectoryPicker === 'function';
+  if (!canPick) { $('btnFromDl').disabled = true; $('dlInfo').textContent = 'ปุ่มดึงจาก Downloads ใช้ได้ใน Chrome/Edge บนคอมพิวเตอร์ เมื่อเปิดหน้าเวอร์ชัน GitHub'; }
+  async function downloadsDir(forcePick) {
+    let h = forcePick ? null : await local.getHandle('downloads');
+    if (!h) { h = await window.showDirectoryPicker({ id: 'payroll-downloads', mode: 'read', startIn: 'downloads' }); await local.putHandle('downloads', h); }
+    let perm = await h.queryPermission({ mode: 'read' });
+    if (perm !== 'granted') perm = await h.requestPermission({ mode: 'read' });
+    if (perm !== 'granted') throw new Error('ไม่ได้รับสิทธิ์อ่านโฟลเดอร์ Downloads');
+    return h;
+  }
+  async function pickLatest(forcePick) {
+    $('repErr').hidden = true;
+    try {
+      const dir = await downloadsDir(forcePick);
+      let best = null;
+      for await (const [name, entry] of dir.entries()) {
+        if (entry.kind !== 'file' || !/^(?:[A-Za-z]+_)?Payroll_Report_Period_.*\.xlsx$/i.test(name) || name.startsWith('~$')) continue;
+        const f = await entry.getFile(); if (!best || f.lastModified > best.lastModified) best = f;
+      }
+      if (!best) { $('dlInfo').textContent = `ไม่พบไฟล์ Payroll_Report_Period_*.xlsx ในโฟลเดอร์ "${dir.name}" ลอง export จาก empeo ก่อน หรือกด "เลือกโฟลเดอร์ใหม่"`; return; }
+      const ageH = (Date.now() - best.lastModified) / 3600e3;
+      $('dlInfo').textContent = `ใช้ไฟล์ ${best.name} · บันทึกเมื่อ ${new Date(best.lastModified).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' })}` + (ageH > 24 ? ' · ไฟล์นี้เก่ากว่า 1 วัน ตรวจว่าเป็นงวดที่ถูกต้อง' : '');
+      await loadReport(best);
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+      $('dlInfo').textContent = e && e.name === 'SecurityError' ? 'หน้านี้ขอสิทธิ์อ่านโฟลเดอร์ไม่ได้ (ใช้ได้เฉพาะหน้าเวอร์ชัน GitHub ใน Chrome/Edge)' : 'อ่านโฟลเดอร์ไม่สำเร็จ: ' + ((e && e.message) || e);
+    }
+  }
+  $('btnFromDl').addEventListener('click', () => pickLatest(false));
+  $('btnRepick').addEventListener('click', () => pickLatest(true));
 
   // ---- column mapping (remembered per browser)
   const MKEY = () => CO().key + '-template-map-v1';
@@ -913,7 +1147,239 @@ aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:grid
   });
   $('btnAgain').addEventListener('click', () => S.last && offer(S.last));
 
+  // ================= Payroll Plan + customer email =================
+  const TH_ABBR = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const DOW = ['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'];
+  const DEFAULT_STEPS = [
+    { name: 'ส่ง Payroll Plan ประจำเดือน', who: 'e', wd: 5 },
+    { name: 'สรุปข้อมูลการจ่ายเงินเดือนประจำเดือน ส่ง empeo', who: 'c', wd: 4 },
+    { name: 'ประมวลผลข้อมูลการทำเงินเดือน', who: 'e', wd: 3 },
+    { name: 'ส่งข้อมูลเงินเดือนให้ลูกค้าตรวจสอบ (Unauthorized)', who: 'e', wd: 3 },
+    { name: 'ส่งรายงานสรุปจำนวนเงินที่ต้องนำส่งและรายงานอื่นๆ (Finalized)', who: 'e', wd: 2 },
+    { name: 'เปิด PaySlip Online', who: 'e', wd: 0 },
+  ];
+  const DEFAULT_HOLIDAYS = '5/12/2569, 7/12/2569, 10/12/2569, 31/12/2569, 1/1/2570';
+  const P = { cfg: null };
+  const dkey = d => d.toISOString().slice(0, 10);
+  const thShort = d => `${d.getUTCDate()} ${TH_ABBR[d.getUTCMonth()]} ${String(d.getUTCFullYear() + 543).slice(-2)}`;
+  const thLong = (m, y) => `${E.TH_MONTHS[m - 1]} ${y + 543}`;
+  const coShort = () => CO().short || CO().name;
+  function parseHolidays(txt) {
+    const set = new Set();
+    String(txt || '').split(/[,\s]+/).forEach(t => { const m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); if (m) { let y = +m[3]; if (y > 2400) y -= 543; set.add(dkey(new Date(Date.UTC(y, +m[2] - 1, +m[1])))); } });
+    return set;
+  }
+  // settings per company: shared db doc plans/<co> when published, else localStorage
+  async function loadPlanCfg() {
+    const co = CO().key; let c = null;
+    await capsReady;
+    try {
+      if (shared.ready) { const s = await shared.db.doc('plans/' + co).get(); if (s.exists) c = s.data(); }
+      else { const t = localStorage.getItem('pt-plan-' + co); if (t) c = JSON.parse(t); }
+    } catch (e) {}
+    P.cfg = Object.assign({ steps: DEFAULT_STEPS.map(x => Object.assign({}, x)), holidays: DEFAULT_HOLIDAYS, to: '', cc: '', greet: '', sig: '' }, c || {});
+    $('inpHolidays').value = P.cfg.holidays || '';
+    $('mTo').value = P.cfg.to || ''; $('mCc').value = P.cfg.cc || ''; $('mGreet').value = P.cfg.greet || ''; $('mSig').value = P.cfg.sig || '';
+    drawEditor(); renderPlan(true);
+  }
+  async function savePlanCfg(note) {
+    const co = CO().key; const data = JSON.parse(JSON.stringify(P.cfg));
+    try {
+      await capsReady;
+      if (shared.ready) { if (!shared.canWrite) throw noEdit(); await shared.db.doc('plans/' + co).set(data); }
+      else localStorage.setItem('pt-plan-' + co, JSON.stringify(data));
+      $('copyNote').textContent = note || 'บันทึกแล้ว';
+    } catch (e) { $('copyNote').textContent = e.code === 'no_edit' ? 'ต้องมีสิทธิ์ Editor จึงจะบันทึกค่าของทีมได้ (ใช้ได้เฉพาะรอบนี้)' : 'บันทึกไม่สำเร็จ'; }
+  }
+  function planDates() {
+    const v = $('inpPay').value; if (!v) return null;
+    const [y, m, d] = v.split('-').map(Number); const pay = new Date(Date.UTC(y, m - 1, d));
+    const hol = parseHolidays(P.cfg.holidays);
+    const isOff = dt => [0, 6].includes(dt.getUTCDay()) || hol.has(dkey(dt));
+    const back = n => { const dt = new Date(pay); let k = 0; while (k < n) { dt.setUTCDate(dt.getUTCDate() - 1); if (!isOff(dt)) k++; } return dt; };
+    const steps = P.cfg.steps.map(s => Object.assign({}, s, { date: back(Math.max(0, +s.wd || 0)) }));
+    const first = steps.reduce((a, s) => s.date < a ? s.date : a, pay);
+    const start = new Date(Date.UTC(pay.getUTCFullYear(), pay.getUTCMonth(), 1)); if (first < start) start.setTime(Date.UTC(first.getUTCFullYear(), first.getUTCMonth(), first.getUTCDate()));
+    const end = new Date(Date.UTC(pay.getUTCFullYear(), pay.getUTCMonth() + 1, 0));
+    const days = []; for (let dt = new Date(start); dt <= end; dt.setUTCDate(dt.getUTCDate() + 1)) days.push(new Date(dt));
+    return { pay, steps, days, hol, isOff, month: +$('selMonth').value, year: +$('inpYear').value };
+  }
+  function renderPlan(resetMail) {
+    const P2 = planDates(); const box = $('planView'); if (!P2) { box.textContent = 'ใส่วันจ่ายในขั้นตอนที่ 2 ก่อน'; return; }
+    const months = []; P2.days.forEach(d => { const k = d.getUTCMonth(); const l = months[months.length - 1]; if (l && l.m === k) l.n++; else months.push({ m: k, y: d.getUTCFullYear(), n: 1 }); });
+    const dayCls = d => P2.hol.has(dkey(d)) ? 'hol' : [0, 6].includes(d.getUTCDay()) ? 'we' : '';
+    let h = `<table><thead><tr><th rowspan="3">No.</th><th rowspan="3" style="text-align:left">รายการ</th><th colspan="2">ผู้รับผิดชอบ</th><th rowspan="3">วันที่</th>`;
+    h += months.map(m => `<th colspan="${m.n}">${E.TH_MONTHS[m.m]} ${m.y + 543}</th>`).join('') + `</tr><tr><th rowspan="2" style="color:#e8711c">empeo</th><th rowspan="2" style="color:#2f8fd0">ลูกค้า</th>`;
+    h += P2.days.map(d => `<th class="d ${dayCls(d)}">${d.getUTCDate()}</th>`).join('') + '</tr><tr>' + P2.days.map(d => `<th class="d ${dayCls(d)}">${DOW[d.getUTCDay()]}</th>`).join('') + '</tr></thead><tbody>';
+    h += `<tr class="grp"><td colspan="${5 + P2.days.length}">รอบเงินเดือน ${thLong(P2.month, P2.year)} · เงินเดือนออก ${thShort(P2.pay)}</td></tr>`;
+    P2.steps.forEach((s, i) => {
+      h += `<tr><td style="text-align:center">${i + 1}</td><td>${esc(s.name)}</td><td class="resp">${s.who === 'e' ? '<span class="x e">X</span>' : ''}</td><td class="resp">${s.who === 'c' ? '<span class="x c">X</span>' : ''}</td><td>${thShort(s.date)}</td>`;
+      h += P2.days.map(d => `<td class="d ${dayCls(d)}">${dkey(d) === dkey(s.date) ? `<span class="bar ${s.who}"></span>` : ''}</td>`).join('') + '</tr>';
+    });
+    h += `<tr class="pay"><td></td><td>วันที่เงินเดือนออก (Pay Date)</td><td></td><td></td><td>${thShort(P2.pay)}</td>` + P2.days.map(d => `<td class="d ${dayCls(d)}">${dkey(d) === dkey(P2.pay) ? '<span class="bar p"></span>' : ''}</td>`).join('') + '</tr></tbody></table>';
+    box.innerHTML = `<div style="padding:12px 14px 4px"><b>Payroll Plan — ${esc(coShort())}</b><div class="hint">สำหรับรอบเงินเดือน ${thLong(P2.month, P2.year)}</div></div>` + h;
+    if (resetMail || !P.bodyEdited) { $('mSubj').value = `Payroll Plan ${coShort()} — รอบเงินเดือน ${thLong(P2.month, P2.year)}`; $('mBody').value = mailBody(P2); P.bodyEdited = false; }
+    paintMail();
+  }
+  function mailBody(P2) {
+    const client = P2.steps.filter(s => s.who === 'c');
+    return `เรียน ${$('mGreet').value || 'ทีม HR ' + coShort()}\n\nทีม empeo Payroll ขอส่ง Payroll Plan รอบเงินเดือน ${thLong(P2.month, P2.year)} ตามไฟล์แนบ (รูปภาพและ Excel) เพื่อใช้เป็นกำหนดการร่วมกันในเดือนนี้\n\n`
+      + (client.length ? `งานที่ขอความร่วมมือจากทางบริษัท\n${client.map(s => `• ${s.name}: ${thShort(s.date)}`).join('\n')}\n\n` : '')
+      + `วันที่เงินเดือนออก: ${thShort(P2.pay)}\n\nหากต้องการปรับวันใด ตอบกลับอีเมลนี้ได้เลย\n\nขอแสดงความนับถือ\nทีม empeo Payroll`;
+  }
+  const fileBase = () => `Payroll Plan ${coShort()} ${String($('selMonth').value).padStart(2, '0')}-${+$('inpYear').value + 543}`;
+  function paintMail() {
+    const card = $('mPreview'); card.textContent = '';
+    const mh = document.createElement('div'); mh.className = 'mh';
+    mh.textContent = `ถึง: ${$('mTo').value || '—'}${$('mCc').value ? '   CC: ' + $('mCc').value : ''}\nเรื่อง: ${$('mSubj').value}`;
+    mh.style.whiteSpace = 'pre-wrap';
+    const body = document.createElement('div'); body.textContent = $('mBody').value;
+    card.append(mh, body);
+    if ($('mSig').value.trim()) { const sg = document.createElement('div'); sg.className = 'sig'; sg.textContent = $('mSig').value; card.append(sg); }
+    $('mAttach').textContent = `ไฟล์แนบ: ${fileBase()}.png · ${fileBase()}.xlsx`;
+    $('mPrompt').textContent = `ร่างอีเมล Payroll Plan ${coShort()} รอบ ${thLong(+$('selMonth').value, +$('inpYear').value)} ใน Outlook ตามหน้า Payroll Template Builder`;
+  }
+  ['mTo', 'mCc', 'mSubj', 'mSig'].forEach(id => $(id).addEventListener('input', paintMail));
+  $('mBody').addEventListener('input', () => { P.bodyEdited = true; paintMail(); });
+  $('mGreet').addEventListener('input', () => { if (!P.bodyEdited) renderPlan(true); });
+  $('btnMailReset').addEventListener('click', () => renderPlan(true));
+  $('btnMailSave').addEventListener('click', async () => { Object.assign(P.cfg, { to: $('mTo').value.trim(), cc: $('mCc').value.trim(), greet: $('mGreet').value.trim(), sig: $('mSig').value }); await savePlanCfg('บันทึกผู้รับและลายเซ็นของบริษัทนี้แล้ว'); });
+  async function copyText(t, okMsg) {
+    try { await navigator.clipboard.writeText(t); $('copyNote').textContent = okMsg; }
+    catch (e) { const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); $('copyNote').textContent = okMsg; } catch (e2) { $('copyNote').textContent = 'คัดลอกไม่ได้ เลือกข้อความแล้วกด Ctrl/Cmd+C'; } ta.remove(); }
+  }
+  $('btnCopyMail').addEventListener('click', () => copyText(`ถึง: ${$('mTo').value}\nCC: ${$('mCc').value}\nเรื่อง: ${$('mSubj').value}\n\n${$('mBody').value}\n\n${$('mSig').value}`, 'คัดลอกข้อความอีเมลแล้ว'));
+  $('btnCopyPrompt').addEventListener('click', () => copyText(`${$('mPrompt').textContent}\n\nถึง: ${$('mTo').value}\nCC: ${$('mCc').value}\nหัวเรื่อง: ${$('mSubj').value}\nไฟล์แนบ (ใน Downloads): ${fileBase()}.png, ${fileBase()}.xlsx\n\nข้อความ:\n${$('mBody').value}\n\n${$('mSig').value}\n\nร่างไว้ใน Outlook Web แล้วรอให้ฉันตรวจและกด Send เอง`, 'คัดลอกคำสั่งพร้อมเนื้อหาอีเมลแล้ว วางในแชท Claude ได้เลย'));
+  // editor
+  function drawEditor() {
+    const tb = $('planRows'); tb.innerHTML = '';
+    P.cfg.steps.forEach((s, i) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td><input type="text" aria-label="รายการ"></td><td><select aria-label="ผู้รับผิดชอบ"><option value="e">empeo</option><option value="c">ลูกค้า</option></select></td><td class="num"><input type="number" min="0" max="30" aria-label="วันทำการก่อนวันจ่าย"></td><td><button class="btn small" type="button">ลบ</button></td>`;
+      const [nm, wh, wd] = tr.querySelectorAll('input,select'); nm.value = s.name; wh.value = s.who; wd.value = s.wd;
+      const upd = () => { s.name = nm.value; s.who = wh.value; s.wd = +wd.value || 0; renderPlan(false); queueSave(); };
+      nm.addEventListener('input', upd); wh.addEventListener('change', upd); wd.addEventListener('input', upd);
+      tr.querySelector('button').addEventListener('click', () => { P.cfg.steps.splice(i, 1); drawEditor(); renderPlan(false); queueSave(); });
+      tb.appendChild(tr);
+    });
+  }
+  let saveT = null; const queueSave = () => { clearTimeout(saveT); saveT = setTimeout(() => savePlanCfg('บันทึกขั้นตอนของบริษัทนี้แล้ว'), 1200); };
+  $('btnPlanEdit').addEventListener('click', () => { const ed = $('planEditor'); ed.hidden = !ed.hidden; $('btnPlanEdit').setAttribute('aria-expanded', String(!ed.hidden)); });
+  $('btnAddStep').addEventListener('click', () => { P.cfg.steps.push({ name: 'ขั้นตอนใหม่', who: 'e', wd: 1 }); P.cfg.steps.sort((a, b) => b.wd - a.wd); drawEditor(); renderPlan(false); queueSave(); });
+  $('btnResetPlan').addEventListener('click', () => { P.cfg.steps = DEFAULT_STEPS.map(x => Object.assign({}, x)); drawEditor(); renderPlan(false); queueSave(); });
+  $('inpHolidays').addEventListener('change', () => { P.cfg.holidays = $('inpHolidays').value; renderPlan(false); queueSave(); });
+  ['selMonth', 'inpYear', 'inpPay'].forEach(id => $(id).addEventListener('change', () => P.cfg && renderPlan(false)));
+  // generic file save (downloads capability when published, plain download otherwise)
+  async function saveFile(name, blob) {
+    let dl = null; try { dl = await window.claude?.use?.('downloads'); } catch (e) {}
+    if (!dl) { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 30000); $('copyNote').textContent = 'ดาวน์โหลดแล้ว: ' + name; return; }
+    try { await dl.save({ filename: name, data: blob }); $('copyNote').textContent = 'บันทึกแล้ว: ' + name; }
+    catch (e) { $('copyNote').textContent = e && e.code === 'declined' ? 'ยกเลิกการบันทึก' : 'บันทึกไม่สำเร็จ (' + ((e && (e.code || e.message)) || e) + ')'; }
+  }
+  // PNG: draw the plan on a canvas (light theme, like the paper version)
+  async function planPng() {
+    const P2 = planDates(); if (!P2) return null;
+    try { await document.fonts.ready; } catch (e) {}
+    const F = '"IBM Plex Sans Thai", sans-serif', sc = 2;
+    const W0 = 36, W1 = 380, W2 = 54, W3 = 54, W4 = 84, DW = 24, RH = 26, top = 70, HH = 3 * 22;
+    const W = W0 + W1 + W2 + W3 + W4 + DW * P2.days.length + 40;
+    const H = top + HH + RH * (P2.steps.length + 2) + 60;
+    const cv = document.createElement('canvas'); cv.width = W * sc; cv.height = H * sc; const g = cv.getContext('2d'); g.scale(sc, sc);
+    g.fillStyle = '#ffffff'; g.fillRect(0, 0, W, H);
+    const x0 = 20; let y = 20;
+    g.fillStyle = '#1d2124'; g.font = `700 18px ${F}`; g.fillText(`Payroll Plan — ${coShort()}`, x0, y + 14);
+    g.font = `400 12px ${F}`; g.fillStyle = '#5f666b'; g.fillText(`สำหรับรอบเงินเดือน ${thLong(P2.month, P2.year)}`, x0, y + 34);
+    y = top;
+    const cols = [W0, W1, W2, W3, W4]; const xs = [x0]; cols.forEach(w => xs.push(xs[xs.length - 1] + w));
+    const dx = i => xs[5] + i * DW;
+    const cell = (x, yy, w, h, fill) => { if (fill) { g.fillStyle = fill; g.fillRect(x, yy, w, h); } g.strokeStyle = '#d8dbd6'; g.lineWidth = 1; g.strokeRect(x + .5, yy + .5, w, h); };
+    const txt = (t, x, yy, w, h, o) => { o = o || {}; g.fillStyle = o.color || '#1d2124'; g.font = `${o.bold ? 600 : 400} ${o.size || 12}px ${F}`; g.textBaseline = 'middle'; g.textAlign = o.align || 'left'; g.fillText(t, o.align === 'center' ? x + w / 2 : x + 6, yy + h / 2); g.textAlign = 'left'; };
+    const HD = '#fff3c9', WE = '#eceeeb', HO = '#fbe5e3';
+    const dayFill = d => P2.hol.has(dkey(d)) ? HO : [0, 6].includes(d.getUTCDay()) ? WE : null;
+    cell(xs[0], y, W0, HH, HD); txt('No.', xs[0], y, W0, HH, { bold: 1, align: 'center' });
+    cell(xs[1], y, W1, HH, HD); txt('รายการ', xs[1], y, W1, HH, { bold: 1 });
+    cell(xs[2], y, W2 + W3, 22, HD); txt('ผู้รับผิดชอบ', xs[2], y, W2 + W3, 22, { bold: 1, align: 'center' });
+    cell(xs[2], y + 22, W2, 44, HD); txt('empeo', xs[2], y + 22, W2, 44, { bold: 1, align: 'center', color: '#e8711c' });
+    cell(xs[3], y + 22, W3, 44, HD); txt('ลูกค้า', xs[3], y + 22, W3, 44, { bold: 1, align: 'center', color: '#2f8fd0' });
+    cell(xs[4], y, W4, HH, HD); txt('วันที่', xs[4], y, W4, HH, { bold: 1, align: 'center' });
+    let i0 = 0; P2.days.forEach((d, i) => { if (i === P2.days.length - 1 || P2.days[i + 1].getUTCMonth() !== d.getUTCMonth()) { cell(dx(i0), y, DW * (i - i0 + 1), 22, HD); txt(`${E.TH_MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear() + 543}`, dx(i0), y, DW * (i - i0 + 1), 22, { bold: 1, align: 'center', size: 11 }); i0 = i + 1; } });
+    P2.days.forEach((d, i) => { cell(dx(i), y + 22, DW, 22, dayFill(d) || HD); txt(String(d.getUTCDate()), dx(i), y + 22, DW, 22, { align: 'center', size: 11, bold: 1 }); cell(dx(i), y + 44, DW, 22, dayFill(d) || HD); txt(DOW[d.getUTCDay()], dx(i), y + 44, DW, 22, { align: 'center', size: 9, color: '#5f666b' }); });
+    y += HH;
+    const fullW = xs[5] - xs[0] + DW * P2.days.length;
+    cell(xs[0], y, fullW, RH, '#f1f2ef'); txt(`รอบเงินเดือน ${thLong(P2.month, P2.year)} · เงินเดือนออก ${thShort(P2.pay)}`, xs[0], y, fullW, RH, { bold: 1 }); y += RH;
+    const bar = (x, yy, col) => { g.fillStyle = col; const r = 4, bx = x + 4, by = yy + 6, bw = DW - 8, bh = RH - 12; g.beginPath(); g.moveTo(bx + r, by); g.arcTo(bx + bw, by, bx + bw, by + bh, r); g.arcTo(bx + bw, by + bh, bx, by + bh, r); g.arcTo(bx, by + bh, bx, by, r); g.arcTo(bx, by, bx + bw, by, r); g.fill(); };
+    const xmark = (x, yy, col) => { g.fillStyle = col; g.fillRect(x + 15, yy + 5, 24, RH - 10); txt('X', x, yy, W2, RH, { bold: 1, align: 'center', color: '#ffffff', size: 11 }); };
+    P2.steps.forEach((s, n) => {
+      [W0, W1, W2, W3, W4].forEach((w, k) => cell(xs[k], y, w, RH));
+      txt(String(n + 1), xs[0], y, W0, RH, { align: 'center' }); txt(s.name, xs[1], y, W1, RH);
+      if (s.who === 'e') xmark(xs[2], y, '#e8711c'); else xmark(xs[3], y, '#2f8fd0');
+      txt(thShort(s.date), xs[4], y, W4, RH, { align: 'center' });
+      P2.days.forEach((d, i) => { cell(dx(i), y, DW, RH, dayFill(d)); if (dkey(d) === dkey(s.date)) bar(dx(i), y, s.who === 'e' ? '#e8711c' : '#2f8fd0'); });
+      y += RH;
+    });
+    [W0, W1, W2, W3, W4].forEach((w, k) => cell(xs[k], y, w, RH)); txt('วันที่เงินเดือนออก (Pay Date)', xs[1], y, W1, RH, { bold: 1 }); txt(thShort(P2.pay), xs[4], y, W4, RH, { bold: 1, align: 'center' });
+    P2.days.forEach((d, i) => { cell(dx(i), y, DW, RH, dayFill(d)); if (dkey(d) === dkey(P2.pay)) bar(dx(i), y, '#1d2124'); });
+    y += RH + 18;
+    let lx = x0; [['#e8711c', 'งานฝั่ง empeo'], ['#2f8fd0', 'งานฝั่งลูกค้า'], ['#1d2124', 'วันที่เงินเดือนออก'], [WE, 'เสาร์–อาทิตย์'], [HO, 'วันหยุด']].forEach(([c, t]) => { g.fillStyle = c; g.fillRect(lx, y, 12, 12); g.strokeStyle = '#d8dbd6'; g.strokeRect(lx + .5, y + .5, 12, 12); txt(t, lx + 12, y - 1, 120, 14, { size: 11, color: '#5f666b' }); lx += 130; });
+    return await new Promise(r => cv.toBlob(r, 'image/png'));
+  }
+  $('btnPlanPng').addEventListener('click', async () => { const b = await planPng(); if (b) saveFile(fileBase() + '.png', b); });
+  // Excel plan (ExcelJS keeps the colours)
+  async function planXlsx() {
+    const P2 = planDates(); if (!P2 || !window.ExcelJS) { $('copyNote').textContent = 'สร้าง Excel ไม่ได้ ลองโหลดหน้าใหม่'; return null; }
+    const wb = new ExcelJS.Workbook(); const ws = wb.addWorksheet('Payroll Plan', { views: [{ showGridLines: false }] });
+    const fill = c => ({ type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + c } });
+    const border = { top: { style: 'thin', color: { argb: 'FFD8DBD6' } }, left: { style: 'thin', color: { argb: 'FFD8DBD6' } }, bottom: { style: 'thin', color: { argb: 'FFD8DBD6' } }, right: { style: 'thin', color: { argb: 'FFD8DBD6' } } };
+    const nD = P2.days.length, lastCol = 5 + nD;
+    ws.getColumn(1).width = 5; ws.getColumn(2).width = 58; ws.getColumn(3).width = 8; ws.getColumn(4).width = 8; ws.getColumn(5).width = 11;
+    for (let i = 0; i < nD; i++) ws.getColumn(6 + i).width = 4.2;
+    ws.getCell(1, 1).value = `Payroll Plan — ${coShort()}`; ws.getCell(1, 1).font = { bold: true, size: 14 };
+    ws.getCell(2, 1).value = `สำหรับรอบเงินเดือน ${thLong(P2.month, P2.year)}`; ws.getCell(2, 1).font = { color: { argb: 'FF5F666B' } };
+    const r1 = 4, r2 = 5, r3 = 6;
+    ws.mergeCells(r1, 1, r3, 1); ws.getCell(r1, 1).value = 'No.';
+    ws.mergeCells(r1, 2, r3, 2); ws.getCell(r1, 2).value = 'รายการ';
+    ws.mergeCells(r1, 3, r1, 4); ws.getCell(r1, 3).value = 'ผู้รับผิดชอบ';
+    ws.mergeCells(r2, 3, r3, 3); ws.getCell(r2, 3).value = 'empeo'; ws.mergeCells(r2, 4, r3, 4); ws.getCell(r2, 4).value = 'ลูกค้า';
+    ws.mergeCells(r1, 5, r3, 5); ws.getCell(r1, 5).value = 'วันที่';
+    let i0 = 0; P2.days.forEach((d, i) => { if (i === nD - 1 || P2.days[i + 1].getUTCMonth() !== d.getUTCMonth()) { ws.mergeCells(r1, 6 + i0, r1, 6 + i); ws.getCell(r1, 6 + i0).value = `${E.TH_MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear() + 543}`; i0 = i + 1; } });
+    const dayFillX = d => P2.hol.has(dkey(d)) ? 'FBE5E3' : [0, 6].includes(d.getUTCDay()) ? 'ECEEEB' : null;
+    P2.days.forEach((d, i) => { ws.getCell(r2, 6 + i).value = d.getUTCDate(); ws.getCell(r3, 6 + i).value = DOW[d.getUTCDay()]; });
+    for (let r = r1; r <= r3; r++) for (let c = 1; c <= lastCol; c++) { const ce = ws.getCell(r, c); ce.fill = fill(c > 5 && r > r1 && dayFillX(P2.days[c - 6]) || 'FFF3C9'); ce.font = { bold: true, size: c > 5 ? 9 : 11, color: { argb: c === 3 && r === r2 ? 'FFE8711C' : c === 4 && r === r2 ? 'FF2F8FD0' : 'FF1D2124' } }; ce.alignment = { horizontal: c === 2 ? 'left' : 'center', vertical: 'middle' }; ce.border = border; }
+    let r = r3 + 1;
+    ws.mergeCells(r, 1, r, lastCol); ws.getCell(r, 1).value = `รอบเงินเดือน ${thLong(P2.month, P2.year)} · เงินเดือนออก ${thShort(P2.pay)}`; ws.getCell(r, 1).font = { bold: true }; ws.getCell(r, 1).fill = fill('F1F2EF'); r++;
+    const rowOut = (no, name, who, date, color, bold) => {
+      ws.getCell(r, 1).value = no; ws.getCell(r, 2).value = name; ws.getCell(r, 5).value = thShort(date);
+      if (who) { const c = ws.getCell(r, who === 'e' ? 3 : 4); c.value = 'X'; c.fill = fill(color); c.font = { bold: true, color: { argb: 'FFFFFFFF' } }; }
+      P2.days.forEach((d, i) => { const c = ws.getCell(r, 6 + i); const f = dkey(d) === dkey(date) ? color : dayFillX(d); if (f) c.fill = fill(f); });
+      for (let c = 1; c <= lastCol; c++) { const ce = ws.getCell(r, c); ce.border = border; ce.alignment = { horizontal: c === 2 ? 'left' : 'center', vertical: 'middle' }; if (bold) ce.font = Object.assign({}, ce.font || {}, { bold: true }); }
+      r++;
+    };
+    P2.steps.forEach((s, n) => rowOut(n + 1, s.name, s.who, s.date, s.who === 'e' ? 'E8711C' : '2F8FD0'));
+    rowOut('', 'วันที่เงินเดือนออก (Pay Date)', null, P2.pay, '1D2124', true);
+    r++; [['E8711C', 'งานฝั่ง empeo'], ['2F8FD0', 'งานฝั่งลูกค้า'], ['1D2124', 'วันที่เงินเดือนออก'], ['ECEEEB', 'เสาร์–อาทิตย์'], ['FBE5E3', 'วันหยุด']].forEach(([c, t], k) => { ws.getCell(r + k, 3).fill = fill(c); ws.getCell(r + k, 2).value = t; ws.getCell(r + k, 2).alignment = { horizontal: 'right' }; });
+    const buf = await wb.xlsx.writeBuffer();
+    return new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  }
+  $('btnPlanXlsx').addEventListener('click', async () => { const b = await planXlsx(); if (b) saveFile(fileBase() + '.xlsx', b); });
+  // No-Claude fallback: a ready-to-open email draft (.eml, opens as an unsent draft in Outlook desktop) + attachments, zipped
+  const u8b64 = u8 => { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s).replace(/.{76}/g, '$&\r\n'); };
+  const utf8b64 = t => u8b64(new TextEncoder().encode(t));
+  const hdr = t => '=?UTF-8?B?' + btoa(String.fromCharCode(...new TextEncoder().encode(t))) + '?=';
+  $('btnMailZip').addEventListener('click', async () => {
+    const png = await planPng(), xlsx = await planXlsx(); if (!png || !xlsx) return;
+    const B = '----=_payroll_' + Date.now();
+    const att = async (blob, name, type) => `--${B}\r\nContent-Type: ${type}; name="${hdr(name)}"\r\nContent-Disposition: attachment; filename*=UTF-8''${encodeURIComponent(name)}\r\nContent-Transfer-Encoding: base64\r\n\r\n${u8b64(new Uint8Array(await blob.arrayBuffer()))}\r\n`;
+    const text = $('mBody').value + ($('mSig').value.trim() ? '\n\n' + $('mSig').value : '');
+    const eml = [`To: ${$('mTo').value.replace(/;/g, ',')}`, $('mCc').value ? `Cc: ${$('mCc').value.replace(/;/g, ',')}` : null, `Subject: ${hdr($('mSubj').value)}`,
+      'X-Unsent: 1', 'MIME-Version: 1.0', `Content-Type: multipart/mixed; boundary="${B}"`, '',
+      `--${B}`, 'Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', utf8b64(text), ''].filter(x => x !== null).join('\r\n')
+      + await att(png, fileBase() + '.png', 'image/png') + await att(xlsx, fileBase() + '.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') + `--${B}--\r\n`;
+    const zip = new JSZip(); zip.file(fileBase() + '.eml', eml); zip.file(fileBase() + '.png', png); zip.file(fileBase() + '.xlsx', xlsx);
+    saveFile(fileBase() + ' (ร่างอีเมล).zip', await zip.generateAsync({ type: 'blob' }));
+  });
+
   defaultPay();
   loadRemembered();
+  loadPlanCfg();
 })();
 </script>
