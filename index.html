@@ -810,10 +810,13 @@ textarea.txt{resize:vertical;line-height:1.55}
   // Published on claude.ai: shared with the team (db row + asset). Opened as a local file: this browser only (IndexedDB).
   const local = (() => {
     let dbp = null;
-    const open = () => dbp || (dbp = new Promise((res, rej) => { try { const r = indexedDB.open('payroll-templates', 2);
+    const withTimeout = (pr, ms) => Promise.race([pr, new Promise((_, rej) => setTimeout(() => rej(new Error('browser storage timeout')), ms))]);
+    let dead = null; // once storage fails, stop retrying for this page load
+    const open = () => dead ? Promise.reject(dead) : dbp || (dbp = withTimeout(new Promise((res, rej) => { try { const r = indexedDB.open('payroll-templates', 2);
+      r.onblocked = () => rej(new Error('blocked: ปิดแท็บอื่นที่เปิดหน้านี้ค้างไว้ แล้วโหลดหน้านี้ใหม่'));
       r.onupgradeneeded = () => { const d = r.result; if (!d.objectStoreNames.contains('files')) d.createObjectStore('files', { keyPath: 'co' }); if (!d.objectStoreNames.contains('handles')) d.createObjectStore('handles'); };
-      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); } catch (e) { rej(e); } }));
-    const tx = async (mode, fn) => { const db = await open(); return new Promise((res, rej) => { const t = db.transaction('files', mode); const q = fn(t.objectStore('files')); t.oncomplete = () => res(q && q.result); t.onerror = () => rej(t.error); }); };
+      r.onsuccess = () => { const d = r.result; d.onversionchange = () => { d.close(); dbp = null; }; res(d); }; r.onerror = () => rej(r.error); } catch (e) { rej(e); } }), 4000).catch(e => { dead = e; storageWarn(e); throw e; }));
+    const tx = async (mode, fn) => { const db = await open(); return withTimeout(new Promise((res, rej) => { const t = db.transaction('files', mode); const q = fn(t.objectStore('files')); t.oncomplete = () => res(q && q.result); t.onerror = () => rej(t.error); }), 4000); };
     const htx = async (mode, fn) => { const db = await open(); return new Promise((res, rej) => { const t = db.transaction('handles', mode); const q = fn(t.objectStore('handles')); t.oncomplete = () => res(q && q.result); t.onerror = () => rej(t.error); }); };
     return {
       getHandle: k => htx('readonly', s => s.get(k)).catch(() => null),
@@ -823,6 +826,11 @@ textarea.txt{resize:vertical;line-height:1.55}
       del: co => tx('readwrite', s => s.delete(co)).catch(() => null),
     };
   })();
+  function storageWarn(e) {
+    const n = $('saveErr'); if (!n) return;
+    n.textContent = 'หน้าเว็บใช้ที่เก็บไฟล์ในเบราว์เซอร์ไม่ได้ตอนนี้ (' + ((e && e.message) || e) + ') ยังสร้างไฟล์ได้ตามปกติ แต่จะไม่จำไฟล์ต้นแบบ';
+    n.hidden = false;
+  }
   const shared = { ready: false, db: null, assets: null, user: null, canWrite: false };
   const capsReady = (async () => {
     try {
@@ -991,7 +999,7 @@ textarea.txt{resize:vertical;line-height:1.55}
       if (!found) { $('coWarn').textContent = 'ไม่พบชื่อบริษัทในหัวไฟล์ ใช้รูปแบบของบริษัทที่เลือกไว้'; $('coWarn').hidden = false; }
       const tpl = await E.inspectTemplate(JSZip, XLSX, new Uint8Array(buf), CO());
       S.tplBuf = buf; S.tpl = tpl;
-      if (!fromStore) await remember(f.name, buf);
+      if (!fromStore) remember(f.name, buf).catch(() => {});
       else $('tplName').textContent = f.name + ' (ไฟล์ที่จำไว้)';
       const hidden = new Set(tpl.hidden);
       const key = new Set(['Income - Deduct'].concat(CO().ot ? [CO().ot.sheet] : []));
@@ -1134,18 +1142,19 @@ textarea.txt{resize:vertical;line-height:1.55}
         year: +$('inpYear').value, month: +$('selMonth').value, payDate: { y: py, m: pm, d: pd },
         company: CO().key, report: S.rep, idMap: S.idMap, otMap: S.otMap, preferReportInfo: $('chkInfo').checked, dropBlankIdCols: $('chkDrop').checked });
       S.last = res;
-      if ($('chkKeepOut').checked) { await remember(res.fileName, res.bytes); }
       $('log').innerHTML = res.log.map(l => `<li>${esc(l)}</li>`).join('');
       $('resultPanel').hidden = false;
       $('peopleWrap').hidden = !S.rep;
       $('newList').innerHTML = res.stats.added.map(x => `<li>${esc(x)}</li>`).join('') || '<li>ไม่มี</li>';
       $('goneList').innerHTML = res.stats.dropped.map(x => `<li>${esc(x)}</li>`).join('') || '<li>ไม่มี</li>';
       await offer(res);
+      if ($('chkKeepOut').checked) remember(res.fileName, res.bytes).catch(() => {});
     } catch (e) {
       const note = $('dlNote'); note.hidden = false; note.className = 'note bad'; note.textContent = 'สร้างไฟล์ไม่สำเร็จ: ' + (e.message || e);
     } finally { btn.disabled = false; btn.textContent = old; }
   });
   $('btnAgain').addEventListener('click', () => S.last && offer(S.last));
+  window.addEventListener('unhandledrejection', ev => { const n = $('dlNote'); if (!n) return; n.hidden = false; n.className = 'note bad'; n.textContent = 'เกิดข้อผิดพลาด: ' + ((ev.reason && ev.reason.message) || ev.reason); });
 
   // ================= Payroll Plan + customer email =================
   const TH_ABBR = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
