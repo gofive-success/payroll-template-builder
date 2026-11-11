@@ -271,6 +271,14 @@ textarea.txt{resize:vertical;line-height:1.55}
           Claude จะเปิด Outlook บน Chrome กรอกผู้รับ หัวเรื่อง ข้อความ และแนบไฟล์ให้ แล้วรอคุณตรวจและกด Send เอง
         </div>
         <div class="note"><b>ถ้า Claude ติด limit:</b> กด <button class="btn small" id="btnMailZip" type="button">ดาวน์โหลดร่างอีเมล (.zip)</button> แตกไฟล์แล้วดับเบิลคลิกไฟล์ .eml จะเปิดเป็นอีเมลร่างใน Outlook (แอปบนเครื่อง) พร้อมผู้รับ หัวเรื่อง ข้อความ และไฟล์แนบ ตรวจแล้วกด Send ได้เลย</div>
+        <div class="note"><b>ส่งเองผ่าน Outlook Web (ไม่ต้องใช้ Claude):</b>
+          <ol class="how" style="margin:6px 0 8px">
+            <li>กด <button class="btn small" id="btnBothFiles" type="button">ดาวน์โหลดไฟล์แนบทั้ง 2 ไฟล์</button> (รูป + Excel Plan ลงโฟลเดอร์ Downloads)</li>
+            <li>กด <a class="btn small" id="lnkOwa" href="https://outlook.office.com/mail/deeplink/compose" target="_blank" rel="noopener">เปิดร่างใน Outlook Web</a> จะได้อีเมลใหม่ที่ใส่ผู้รับ CC หัวเรื่อง และข้อความไว้แล้ว</li>
+            <li>ลากไฟล์ทั้ง 2 จาก Downloads ไปวางในอีเมล ตรวจแล้วกด <b>Send</b></li>
+          </ol>
+          <span class="hint">ถ้าลายเซ็นของ Outlook ใส่ให้อัตโนมัติอยู่แล้ว ลบลายเซ็นในช่องลายเซ็นของหน้านี้ออก จะได้ไม่ซ้ำ</span>
+        </div>
         <div class="row"><button class="btn" id="btnCopyMail" type="button">คัดลอกข้อความอีเมล</button><span class="hint" id="copyNote"></span></div>
       </div>
     </section>
@@ -1245,6 +1253,12 @@ textarea.txt{resize:vertical;line-height:1.55}
     const body = document.createElement('div'); body.textContent = $('mBody').value;
     card.append(mh, body);
     if ($('mSig').value.trim()) { const sg = document.createElement('div'); sg.className = 'sig'; sg.textContent = $('mSig').value; card.append(sg); }
+    const q = new URLSearchParams();
+    if ($('mTo').value.trim()) q.set('to', $('mTo').value.replace(/\s*;\s*/g, ',').trim());
+    if ($('mCc').value.trim()) q.set('cc', $('mCc').value.replace(/\s*;\s*/g, ',').trim());
+    q.set('subject', $('mSubj').value);
+    q.set('body', $('mBody').value + ($('mSig').value.trim() ? '\n\n' + $('mSig').value : ''));
+    $('lnkOwa').href = 'https://outlook.office.com/mail/deeplink/compose?' + q.toString().replace(/\+/g, '%20');
     $('mAttach').textContent = `ไฟล์แนบ: ${fileBase()}.png · ${fileBase()}.xlsx`;
     $('mPrompt').textContent = `ร่างอีเมล Payroll Plan ${coShort()} รอบ ${thLong(+$('selMonth').value, +$('inpYear').value)} ใน Outlook ตามหน้า Payroll Template Builder`;
   }
@@ -1370,6 +1384,7 @@ textarea.txt{resize:vertical;line-height:1.55}
     return new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   }
   $('btnPlanXlsx').addEventListener('click', async () => { const b = await planXlsx(); if (b) saveFile(fileBase() + '.xlsx', b); });
+  $('btnBothFiles').addEventListener('click', async () => { const a = await planPng(); if (a) await saveFile(fileBase() + '.png', a); const b = await planXlsx(); if (b) await saveFile(fileBase() + '.xlsx', b); });
   // No-Claude fallback: a ready-to-open email draft (.eml, opens as an unsent draft in Outlook desktop) + attachments, zipped
   const u8b64 = u8 => { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s).replace(/.{76}/g, '$&\r\n'); };
   const utf8b64 = t => u8b64(new TextEncoder().encode(t));
